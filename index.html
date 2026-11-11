@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lo-Battery Game Portal</title>
+  <style>
+    :root {
+      --bg: #0c1018;
+      --surface: #151c29;
+      --surface-hover: #1b2436;
+      --border: #2a3752;
+      --text: #eef3fb;
+      --muted: #9aa9c4;
+      --accent: #45c8f5;
+      --accent-hover: #6ad7fb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at 20% 0%, #162238 0%, var(--bg) 55%);
+      color: var(--text);
+      font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", system-ui, sans-serif;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 40px 20px 64px;
+    }
+    header {
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 20px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      letter-spacing: 0.02em;
+    }
+    .lead {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent);
+      background: var(--surface-hover);
+    }
+    .thumb-wrap {
+      aspect-ratio: 16 / 9;
+      background: #090d14;
+      overflow: hidden;
+      border-bottom: 1px solid var(--border);
+    }
+    .thumb-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .card-body {
+      padding: 16px 18px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+    .card-title {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+    .card-sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .tag {
+      font-size: 0.76rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(69, 200, 245, 0.12);
+      border: 1px solid rgba(69, 200, 245, 0.35);
+      color: #a9e7fc;
+    }
+    .meta {
+      font-size: 0.83rem;
+      color: var(--muted);
+      background: rgba(10, 14, 22, 0.65);
+      border: 1px solid rgba(42, 55, 82, 0.7);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .play-btn {
+      margin-top: auto;
+      display: inline-block;
+      text-align: center;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.96rem;
+      padding: 11px 16px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #07131d;
+      transition: background 0.15s ease;
+    }
+    .play-btn:hover {
+      background: var(--accent-hover);
+    }
+    .card-placeholder {
+      border-style: dashed;
+      opacity: 0.75;
+      justify-content: center;
+      align-items: center;
+      min-height: 260px;
+      padding: 24px;
+      text-align: center;
+      color: var(--muted);
+    }
+    footer {
+      margin-top: 44px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Lo-Battery ゲーム一覧</h1>
+      <p class="lead">ブラウザを開くだけで、インストール不要でそのまま遊べる自作ゲーム集です。</p>
+    </header>
+
+    <main id="game-grid" class="grid"></main>
+
+    <footer>
+      Powered by <strong>Gmini</strong> 2D Engine (Rust + WebAssembly / WebGPU / WebGL2)
+    </footer>
+  </div>
+
+  <script>
+    const FALLBACK_GAMES = [
+      {
+        id: "newton-cradle",
+        title: "ニュートンの揺籃クリッカー",
+        subtitle: "物理演算×クリッカー放置ゲーム",
+        engine: "Gmini 2D Engine (Rust + WebGPU / WebGL2)",
+        url: "./games/newton-cradle/index.html",
+        thumbnail: "./assets/newton-cradle.png",
+        controls: "ドラッグ/クリック: 鉄球を掴んで弾く・エネルギー生産 | A/D: 球を引く | W/S: 引き球数変更 | 1〜4: タブ切替",
+        platform_note: "PCブラウザ向け（WebGPU / WebGL2・インストール不要）",
+        tags: ["クリッカー", "物理演算", "放置", "Gmini"]
+      },
+      {
+        id: "gmini-survivors",
+        title: "Gmini Survivors（試作アクション）",
+        subtitle: "見下ろし型ローグライクアクション",
+        engine: "Gmini 2D Engine (Rust + WebGPU / WebGL2)",
+        url: "./games/gmini-survivors/index.html",
+        thumbnail: "./assets/gmini-survivors.png",
+        controls: "WASD / 矢印: 移動 | Space / Aボタン: ダッシュ | クリック: 照準強化 | 1/2/3 or クリック: レベルアップ選択",
+        platform_note: "PCブラウザ向け（WebGPU / WebGL2・インストール不要）",
+        tags: ["アクション", "ローグライク", "2D", "Gmini"]
+      }
+    ];
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
+      }[c]));
+    }
+
+    function renderGames(games) {
+      const grid = document.getElementById("game-grid");
+      grid.innerHTML = games.map((g) => `
+        <article class="card">
+          <div class="thumb-wrap">
+            <img src="${escapeHtml(g.thumbnail)}" alt="${escapeHtml(g.title)}" loading="lazy" />
+          </div>
+          <div class="card-body">
+            <h2 class="card-title">${escapeHtml(g.title)}</h2>
+            <p class="card-sub">${escapeHtml(g.subtitle)} — ${escapeHtml(g.platform_note)}</p>
+            <div class="tags">
+              ${(g.tags || []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("")}
+            </div>
+            <div class="meta"><strong>操作:</strong> ${escapeHtml(g.controls)}</div>
+            <a class="play-btn" href="${escapeHtml(g.url)}">ブラウザで遊ぶ</a>
+          </div>
+        </article>
+      `).join("") + `
+        <article class="card card-placeholder">
+          <div>
+            <strong>次のゲーム枠（準備中）</strong>
+            <p style="margin:8px 0 0;font-size:0.86rem;">新しくゲームを作ったら <code>games.json</code> と <code>games/</code> に追加されます。</p>
+          </div>
+        </article>
+      `;
+    }
+
+    fetch("./games.json", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : FALLBACK_GAMES))
+      .then((data) => renderGames(Array.isArray(data) ? data : FALLBACK_GAMES))
+      .catch(() => renderGames(FALLBACK_GAMES));
+  </script>
+</body>
+</html>

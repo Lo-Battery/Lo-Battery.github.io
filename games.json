@@ -1,0 +1,24 @@
+[
+  {
+    "id": "newton-cradle",
+    "title": "ニュートンの揺籃クリッカー",
+    "subtitle": "物理演算×クリッカー放置ゲーム",
+    "engine": "Gmini 2D Engine (Rust + WebGPU / WebGL2)",
+    "url": "./games/newton-cradle/index.html",
+    "thumbnail": "./assets/newton-cradle.png",
+    "controls": "ドラッグ/クリック: 鉄球を掴んで弾く・エネルギー生産 | A/D: 球を引く | W/S: 引き球数変更 | 1〜4: タブ切替",
+    "platform_note": "PCブラウザ向け（WebGPU / WebGL2・インストール不要）",
+    "tags": ["クリッカー", "物理演算", "放置", "Gmini"]
+  },
+  {
+    "id": "gmini-survivors",
+    "title": "Gmini Survivors（試作アクション）",
+    "subtitle": "見下ろし型ローグライクアクション",
+    "engine": "Gmini 2D Engine (Rust + WebGPU / WebGL2)",
+    "url": "./games/gmini-survivors/index.html",
+    "thumbnail": "./assets/gmini-survivors.png",
+    "controls": "WASD / 矢印: 移動 | Space / Aボタン: ダッシュ | クリック: 照準強化 | 1/2/3 or クリック: レベルアップ選択",
+    "platform_note": "PCブラウザ向け（WebGPU / WebGL2・インストール不要）",
+    "tags": ["アクション", "ローグライク", "2D", "Gmini"]
+  }
+]
