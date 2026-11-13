@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ニュートンの揺籃クリッカー — Newton's Cradle Clicker</title>
+  <title>ニュートン・クォータ — 20秒ノルマ達成型 物理演算ローグライク</title>
   <style>
     html, body {
       margin: 0;
@@ -157,7 +157,7 @@
         const wasmBytes = await fetchWithProgress("./pkg/newton_cradle_lib_bg.wasm");
         await init(wasmBytes);
         focusCanvas();
-        statusEl.textContent = "揺籃ステージをクリックしてエネルギー生産！右パネルで強化";
+        statusEl.textContent = "20秒以内に玉を引いてノルマ達成！右パネルで倍速・スキル確認";
         setTimeout(() => {
           if (loaderContainer) loaderContainer.style.opacity = "0";
         }, 4000);
