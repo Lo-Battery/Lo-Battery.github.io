@@ -30,7 +30,7 @@
       padding: 40px 20px 64px;
     }
     header {
-      margin-bottom: 32px;
+      margin-bottom: 24px;
       border-bottom: 1px solid var(--border);
       padding-bottom: 20px;
     }
@@ -43,6 +43,63 @@
       margin: 0;
       color: var(--muted);
       font-size: 0.98rem;
+    }
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 24px;
+      padding: 12px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .filter-label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 600;
+      margin-right: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .filter-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--muted);
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+    .filter-chip:hover {
+      background: rgba(69, 200, 245, 0.15);
+      color: #fff;
+      border-color: rgba(69, 200, 245, 0.4);
+    }
+    .filter-chip.active {
+      background: var(--accent);
+      color: #07131d;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+    .filter-chip .chip-count {
+      font-size: 0.72rem;
+      opacity: 0.88;
+      background: rgba(0, 0, 0, 0.22);
+      padding: 1px 6px;
+      border-radius: 999px;
+    }
+    .filter-chip.active .chip-count {
+      background: rgba(0, 0, 0, 0.28);
+      color: #07131d;
     }
     .grid {
       display: grid;
@@ -104,6 +161,20 @@
       background: rgba(69, 200, 245, 0.12);
       border: 1px solid rgba(69, 200, 245, 0.35);
       color: #a9e7fc;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+    .tag:hover {
+      background: rgba(69, 200, 245, 0.28);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .tag.active {
+      background: var(--accent);
+      color: #07131d;
+      border-color: var(--accent);
+      font-weight: 700;
     }
     .meta {
       font-size: 0.83rem;
@@ -139,6 +210,29 @@
       text-align: center;
       color: var(--muted);
     }
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 48px 20px;
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+      color: var(--muted);
+    }
+    .empty-state button {
+      margin-top: 14px;
+      background: var(--accent);
+      color: #07131d;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .empty-state button:hover {
+      background: var(--accent-hover);
+    }
     footer {
       margin-top: 44px;
       color: var(--muted);
@@ -157,6 +251,12 @@
         ※ 初回起動時は各ゲームのエンジンファイル（約7MB）のダウンロードが行われます。画面が切り替わらない場合は <kbd style="background: rgba(255,255,255,0.1); padding: 1px 5px; border-radius: 4px;">Ctrl</kbd> + <kbd style="background: rgba(255,255,255,0.1); padding: 1px 5px; border-radius: 4px;">Shift</kbd> + <kbd style="background: rgba(255,255,255,0.1); padding: 1px 5px; border-radius: 4px;">R</kbd>（強制再読み込み）をお試しください。
       </p>
     </header>
+
+    <!-- タグフィルターUI -->
+    <nav id="filter-bar" class="filter-bar" aria-label="タグフィルター">
+      <span class="filter-label">🏷️ タグ絞り込み:</span>
+      <div id="filter-chips" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+    </nav>
 
     <main id="game-grid" class="grid"></main>
 
@@ -202,15 +302,88 @@
       }
     ];
 
+    let allGames = [];
+    let currentTag = "all";
+
     function escapeHtml(s) {
       return String(s).replace(/[&<>"']/g, (c) => ({
         "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
       }[c]));
     }
 
-    function renderGames(games) {
+    function getTagFromHash() {
+      const match = window.location.hash.match(/tag=([^&]+)/);
+      return match ? decodeURIComponent(match[1]) : "all";
+    }
+
+    function setTag(tag) {
+      currentTag = tag;
+      if (tag === "all") {
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+      } else {
+        history.replaceState(null, "", `#tag=${encodeURIComponent(tag)}`);
+      }
+      renderFilterChips();
+      renderGameGrid();
+    }
+
+    function computeTagCounts() {
+      const counts = { all: allGames.length };
+      allGames.forEach((g) => {
+        (g.tags || []).forEach((t) => {
+          counts[t] = (counts[t] || 0) + 1;
+        });
+      });
+      return counts;
+    }
+
+    function renderFilterChips() {
+      const container = document.getElementById("filter-chips");
+      const counts = computeTagCounts();
+      
+      // タグ一覧の順序: "all" を先頭にし、それ以外は登録頻度順
+      const tagList = Object.keys(counts)
+        .filter((t) => t !== "all")
+        .sort((a, b) => counts[b] - counts[a] || a.localeCompare(b, "ja"));
+      tagList.unshift("all");
+
+      container.innerHTML = tagList.map((tag) => {
+        const isActive = tag === currentTag;
+        const label = tag === "all" ? "すべて" : tag;
+        const count = counts[tag] || 0;
+        return `
+          <button type="button" class="filter-chip ${isActive ? "active" : ""}" data-tag="${escapeHtml(tag)}">
+            ${escapeHtml(label)}
+            <span class="chip-count">${count}</span>
+          </button>
+        `;
+      }).join("");
+
+      container.querySelectorAll(".filter-chip").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          setTag(btn.dataset.tag);
+        });
+      });
+    }
+
+    function renderGameGrid() {
       const grid = document.getElementById("game-grid");
-      grid.innerHTML = games.map((g) => `
+      const filtered = currentTag === "all"
+        ? allGames
+        : allGames.filter((g) => (g.tags || []).includes(currentTag));
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <p>タグ <strong>「${escapeHtml(currentTag)}」</strong> に一致するゲームは現在ありません。</p>
+            <button type="button" id="reset-filter-btn">すべてのゲームを表示</button>
+          </div>
+        `;
+        document.getElementById("reset-filter-btn").addEventListener("click", () => setTag("all"));
+        return;
+      }
+
+      const cardsHtml = filtered.map((g) => `
         <article class="card">
           <div class="thumb-wrap">
             <img src="${escapeHtml(g.thumbnail)}" alt="${escapeHtml(g.title)}" loading="lazy" />
@@ -219,26 +392,57 @@
             <h2 class="card-title">${escapeHtml(g.title)}</h2>
             <p class="card-sub">${escapeHtml(g.subtitle)} — ${escapeHtml(g.platform_note)}</p>
             <div class="tags">
-              ${(g.tags || []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("")}
+              ${(g.tags || []).map((t) => `
+                <span class="tag ${t === currentTag ? "active" : ""}" data-tag="${escapeHtml(t)}" title="タグ「${escapeHtml(t)}」で絞り込む">
+                  ${escapeHtml(t)}
+                </span>
+              `).join("")}
             </div>
             <div class="meta"><strong>操作:</strong> ${escapeHtml(g.controls)}</div>
             <a class="play-btn" href="${escapeHtml(g.url)}">ブラウザで遊ぶ</a>
           </div>
         </article>
-      `).join("") + `
+      `).join("");
+
+      const placeholderHtml = currentTag === "all" ? `
         <article class="card card-placeholder">
           <div>
             <strong>次のゲーム枠（準備中）</strong>
             <p style="margin:8px 0 0;font-size:0.86rem;">新しくゲームを作ったら <code>games.json</code> と <code>games/</code> に追加されます。</p>
           </div>
         </article>
-      `;
+      ` : "";
+
+      grid.innerHTML = cardsHtml + placeholderHtml;
+
+      grid.querySelectorAll(".tag").forEach((span) => {
+        span.addEventListener("click", (e) => {
+          e.preventDefault();
+          setTag(span.dataset.tag);
+        });
+      });
     }
+
+    window.addEventListener("hashchange", () => {
+      currentTag = getTagFromHash();
+      renderFilterChips();
+      renderGameGrid();
+    });
 
     fetch("./games.json", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : FALLBACK_GAMES))
-      .then((data) => renderGames(Array.isArray(data) ? data : FALLBACK_GAMES))
-      .catch(() => renderGames(FALLBACK_GAMES));
+      .then((data) => {
+        allGames = Array.isArray(data) && data.length > 0 ? data : FALLBACK_GAMES;
+        currentTag = getTagFromHash();
+        renderFilterChips();
+        renderGameGrid();
+      })
+      .catch(() => {
+        allGames = FALLBACK_GAMES;
+        currentTag = getTagFromHash();
+        renderFilterChips();
+        renderGameGrid();
+      });
   </script>
 </body>
 </html>
