@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ニュートンの揺籃クリッカー — Lo-Battery</title>
+  <title>ニュートンの揺籃クリッカー — Newton's Cradle Clicker</title>
   <style>
     html, body {
       margin: 0;
@@ -25,25 +25,6 @@
       outline: none;
       cursor: pointer;
     }
-    #back-link {
-      position: fixed;
-      top: 6px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 20;
-      padding: 3px 12px;
-      border-radius: 999px;
-      background: rgba(9, 13, 22, 0.78);
-      border: 1px solid rgba(212, 167, 86, 0.45);
-      color: #f3dfb0;
-      text-decoration: none;
-      font-size: 12px;
-      opacity: 0.78;
-      transition: opacity 0.15s ease;
-    }
-    #back-link:hover {
-      opacity: 1;
-    }
     #gmini-status {
       position: fixed;
       bottom: 10px;
@@ -60,7 +41,6 @@
   </style>
 </head>
 <body>
-  <a id="back-link" href="../../index.html" tabindex="-1">← ゲーム一覧へ</a>
   <canvas id="gmini-canvas" width="1280" height="720" tabindex="0"></canvas>
   <div id="gmini-status">読み込み中... / Loading WASM...</div>
   <script type="module">
@@ -72,8 +52,7 @@
         canvas.focus({ preventScroll: true });
       }
     }
-    window.addEventListener("pointerdown", (e) => {
-      if (e.target && e.target.id === "back-link") return;
+    window.addEventListener("pointerdown", () => {
       focusCanvas();
       if (statusEl) statusEl.style.opacity = "0";
     });
