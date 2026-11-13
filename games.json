@@ -6,7 +6,7 @@
     "engine": "Gmini 2D Engine (Rust + WebGPU / WebGL2)",
     "url": "./games/newton-cradle/index.html",
     "thumbnail": "./assets/newton-cradle.png",
-    "controls": "マウスドラッグ: 玉を掴んで引っ張る・衝突させる | 1〜4キー: 倍速切替(等倍/2倍/3倍/4倍) | Space/Enter: ラウンド開始",
+    "controls": "マウスドラッグ: 玉を掴んで引っ張る・衝突させる | 1〜4キー: 倍速切替 | ショップ内1〜3キー: ドラフト/球配置替/スキル一覧切替",
     "platform_note": "PCブラウザ向け（WebGPU / WebGL2・インストール不要）",
     "tags": ["ローグライク", "物理演算", "2D", "Gmini"]
   },
