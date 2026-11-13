@@ -2,7 +2,7 @@
   {
     "id": "newton-cradle",
     "title": "ニュートン・クォータ",
-    "subtitle": "20秒ノルマ達成型 物理演算ローグライク",
+    "subtitle": "10秒ノルマ達成型 物理演算ローグライク",
     "engine": "Gmini 2D Engine (Rust + WebGPU / WebGL2)",
     "url": "./games/newton-cradle/index.html",
     "thumbnail": "./assets/newton-cradle.png",
