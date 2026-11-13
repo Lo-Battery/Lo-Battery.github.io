@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>クソ大富豪 〜ローカルルール全部乗せ〜</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #081c15;
+      color: #e6ecf5;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      width: min(100vw, 177.78vh);
+      height: min(100vh, 56.25vw);
+      outline: none;
+      cursor: pointer;
+    }
+    #gmini-status {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(8, 28, 21, 0.92);
+      border: 1px solid rgba(212, 167, 86, 0.65);
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 13px;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gmini-canvas" width="1280" height="720" tabindex="0"></canvas>
+  <div id="gmini-status">読み込み中... / Loading WASM...</div>
+  <script type="module">
+    const canvas = document.getElementById("gmini-canvas");
+    const statusEl = document.getElementById("gmini-status");
+
+    function focusCanvas() {
+      if (document.activeElement !== canvas) {
+        canvas.focus({ preventScroll: true });
+      }
+    }
+    window.addEventListener("pointerdown", () => {
+      focusCanvas();
+      if (statusEl) statusEl.style.opacity = "0";
+    });
+    window.addEventListener("keydown", (e) => {
+      focusCanvas();
+      if (["Space", "Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+        e.preventDefault();
+      }
+      if (statusEl) statusEl.style.opacity = "0";
+    }, { capture: true });
+
+    import init from "./pkg/kuso_daifugo_lib.js";
+    init()
+      .then(() => {
+        focusCanvas();
+        if (statusEl) {
+          statusEl.textContent = "人数(3〜7人)とルールを選んで対戦スタート！";
+          setTimeout(() => { statusEl.style.opacity = "0"; }, 4500);
+        }
+      })
+      .catch((e) => {
+        console.error("Gmini WASM boot error:", e);
+        if (statusEl) {
+          statusEl.style.opacity = "1";
+          statusEl.style.borderColor = "#e04848";
+          statusEl.textContent = "起動エラー: " + (e?.message || e);
+        }
+      });
+  </script>
+</body>
+</html>

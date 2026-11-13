@@ -11,6 +11,17 @@
     "tags": ["クリッカー", "物理演算", "放置", "Gmini"]
   },
   {
+    "id": "kuso-daifugo",
+    "title": "クソ大富豪 〜ローカルルール全部乗せ〜",
+    "subtitle": "24種の公式＆カオスルール全盛りCPU対戦カードゲーム",
+    "engine": "Gmini 2D Engine (Rust + WebGPU / WebGL2)",
+    "url": "./games/kuso-daifugo/index.html",
+    "thumbnail": "./assets/kuso-daifugo.png",
+    "controls": "マウス/タップ: カード選択・出す・パス | 矢印キー: 選択移動 | Space: 決定 | 1〜5: 人数・ルールプリセット切替",
+    "platform_note": "PC/タブレットブラウザ向け（WebGPU / WebGL2・インストール不要）",
+    "tags": ["カード", "大富豪", "カジュアル", "Gmini"]
+  },
+  {
     "id": "gmini-survivors",
     "title": "Gmini Survivors（試作アクション）",
     "subtitle": "見下ろし型ローグライクアクション",
