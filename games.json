@@ -1,5 +1,16 @@
 [
   {
+    "id": "newaruro",
+    "title": "ねわるろ20秒",
+    "subtitle": "「ね・わ」「る・ろ」の結び目を見分ける20秒極限スプリント！",
+    "engine": "Gmini 2D Engine (Rust + WebGPU / WebGL2)",
+    "url": "./games/newaruro/index.html",
+    "thumbnail": "./assets/newaruro.png",
+    "controls": "スマホ: 左右スワイプ | PC: 左右クリック (または [←][→] / [A][D] キー)",
+    "platform_note": "PC・スマホ両対応（WebGPU / WebGL2・インストール不要）",
+    "tags": ["アクション", "カジュアル", "パズル", "2D", "Gmini"]
+  },
+  {
     "id": "newton-cradle",
     "title": "ニュートン・クォータ",
     "subtitle": "10秒ノルマ達成型 物理演算ローグライク",
