@@ -36,8 +36,8 @@
     }
     #back-link {
       position: fixed;
-      top: 10px;
-      left: 14px;
+      top: max(10px, env(safe-area-inset-top));
+      left: max(14px, env(safe-area-inset-left));
       z-index: 30;
       padding: 6px 14px;
       border-radius: 999px;
@@ -52,6 +52,29 @@
     #back-link:hover {
       background: rgba(56, 217, 169, 0.25);
       transform: scale(1.02);
+    }
+    #fullscreen-btn {
+      position: fixed;
+      top: max(10px, env(safe-area-inset-top));
+      right: max(14px, env(safe-area-inset-right));
+      z-index: 30;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(13, 17, 26, 0.88);
+      border: 1px solid rgba(56, 217, 169, 0.5);
+      color: #38d9a9;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+    #fullscreen-btn:hover {
+      background: rgba(56, 217, 169, 0.25);
+      transform: scale(1.02);
+    }
+    #fullscreen-btn:active {
+      transform: scale(0.95);
     }
     #loader-container {
       position: fixed;
@@ -91,7 +114,8 @@
   </style>
 </head>
 <body>
-  <a id="back-link" href="../../index.html" tabindex="-1">← ゲーム一覧へ</a>
+  <a id="back-link" href="../../index.html" tabindex="-1">← 一覧へ</a>
+  <button id="fullscreen-btn" type="button" tabindex="-1">⛶ 全画面</button>
   <canvas id="gmini-canvas" width="1280" height="720" tabindex="0"></canvas>
   <div id="loader-container">
     <div id="gmini-status">読み込み準備中... / Preparing WASM...</div>
@@ -103,6 +127,24 @@
     const loaderContainer = document.getElementById("loader-container");
     const statusEl = document.getElementById("gmini-status");
     const progressFill = document.getElementById("progress-bar-fill");
+    const fsBtn = document.getElementById("fullscreen-btn");
+
+    if (fsBtn) {
+      fsBtn.addEventListener("click", () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+          fsBtn.textContent = "✕ 縮小";
+        } else {
+          document.exitFullscreen().catch(() => {});
+          fsBtn.textContent = "⛶ 全画面";
+        }
+      });
+      document.addEventListener("fullscreenchange", () => {
+        if (!document.fullscreenElement && fsBtn) {
+          fsBtn.textContent = "⛶ 全画面";
+        }
+      });
+    }
 
     function focusCanvas() {
       if (document.activeElement !== canvas) {
