@@ -212,10 +212,15 @@
       backdrop-filter: blur(8px);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
-    .badge-mobile {
+    .badge-portrait {
       background: rgba(56, 217, 169, 0.25);
-      border: 1px solid rgba(56, 217, 169, 0.7);
+      border: 1px solid rgba(56, 217, 169, 0.75);
       color: #38d9a9;
+    }
+    .badge-landscape {
+      background: rgba(255, 192, 72, 0.22);
+      border: 1px solid rgba(255, 192, 72, 0.75);
+      color: #ffd166;
     }
     .badge-pc {
       background: rgba(154, 169, 196, 0.2);
@@ -346,7 +351,8 @@
       <h1>Lo-Battery ゲーム一覧</h1>
       <p class="lead">ブラウザを開くだけで、インストール不要でそのまま遊べる自作ゲーム集です。</p>
       <div class="notice-box">
-        💡 <strong>スマホで遊ぶ方へ:</strong> スマホ対応マークのゲームは画面タップやスワイプでそのまま遊べます。初回起動時のみエンジン読込（約7MB）があります。画面が切り替わらない場合はブラウザの再読み込みをお試しください。
+        💡 <strong>端末の向きについて:</strong>
+        「<strong>📱 スマホ対応</strong>」は縦画面で快適に遊べるゲーム、「<strong>🔄 スマホ横画面</strong>」はスマートフォンを横向きに回転して遊ぶゲーム（画面下の「⛶ 全画面」推奨）です。「<strong>💻 PC推奨</strong>」はキーボード・マウス操作が必要です。初回起動時のみエンジン読込（約7MB）があります。
       </div>
     </header>
 
@@ -372,8 +378,8 @@
         engine: "Gmini 2D Engine (Rust + WebGPU / WebGL2)",
         url: "./games/newaruro/index.html",
         thumbnail: "./assets/newaruro.png",
-        controls: "スマホ: 左右スワイプ | PC: 左右クリック (または [←][→] / [A][D] キー)",
-        platform_note: "PC・スマホ両対応（WebGPU / WebGL2・インストール不要）",
+        controls: "スマホ: 左右スワイプ (横画面推奨) | PC: 左右クリック (または [←][→] / [A][D] キー)",
+        platform_note: "スマホ横画面（スワイプ）・PC（クリック）両対応",
         tags: ["アクション", "カジュアル", "パズル", "2D", "Gmini"]
       },
       {
@@ -394,8 +400,8 @@
         engine: "Gmini 2D Engine (Rust + WebGPU / WebGL2)",
         url: "./games/kuso-daifugo/index.html",
         thumbnail: "./assets/kuso-daifugo.png",
-        controls: "マウス/タップ: カード選択・出す・パス | 矢印キー: 選択移動 | Space: 決定 | 1〜5: 人数・ルールプリセット切替",
-        platform_note: "PC/タブレットブラウザ向け（WebGPU / WebGL2・インストール不要）",
+        controls: "マウス/タップ: カード選択・出す・パス (スマホ横画面推奨) | 矢印キー: 選択移動 | Space: 決定 | 1〜5: 人数・ルールプリセット切替",
+        platform_note: "スマホ横画面・PC・タブレット向け（タップ/クリック対応）",
         tags: ["カード", "大富豪", "カジュアル", "Gmini"]
       },
       {
@@ -474,9 +480,18 @@
       });
     }
 
-    function isMobileReady(g) {
-      const text = ((g.platform_note || "") + (g.controls || "")).toLowerCase();
-      return text.includes("スマホ") || text.includes("タップ") || text.includes("スワイプ");
+    function getDeviceBadge(g) {
+      const note = ((g.platform_note || "") + " " + (g.controls || "")).toLowerCase();
+      const tags = (g.tags || []);
+      // ユーザー規則: 「スマホ対応」は縦画面（ポートレート）に対応しているもののみに表記
+      if (note.includes("縦画面") || note.includes("ポートレート") || note.includes("portrait") || tags.includes("縦画面")) {
+        return `<span class="thumb-badge badge-portrait">📱 スマホ対応</span>`;
+      }
+      // スマホで遊べるが横画面必須/推奨のもの
+      if (note.includes("スマホ横画面") || note.includes("横画面") || note.includes("スワイプ") || note.includes("タップ")) {
+        return `<span class="thumb-badge badge-landscape">🔄 スマホ横画面</span>`;
+      }
+      return `<span class="thumb-badge badge-pc">💻 PC推奨</span>`;
     }
 
     function renderGameGrid() {
@@ -497,10 +512,7 @@
       }
 
       const cardsHtml = filtered.map((g) => {
-        const mobileOk = isMobileReady(g);
-        const badgeHtml = mobileOk
-          ? `<span class="thumb-badge badge-mobile">📱 スマホ対応</span>`
-          : `<span class="thumb-badge badge-pc">💻 PC推奨</span>`;
+        const badgeHtml = getDeviceBadge(g);
 
         return `
           <article class="card">
