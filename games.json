@@ -6,9 +6,9 @@
     "engine": "Gmini 2D Engine (Rust + WebGPU / WebGL2)",
     "url": "./games/newaruro/index.html",
     "thumbnail": "./assets/newaruro.png",
-    "controls": "スマホ: 左右スワイプ (横画面推奨) | PC: 左右クリック (または [←][→] / [A][D] キー)",
-    "platform_note": "スマホ横画面（スワイプ）・PC（クリック）両対応",
-    "tags": ["アクション", "カジュアル", "パズル", "2D", "Gmini"]
+    "controls": "スマホ: 左右カードスワイプ (縦画面) | PC: マウスドラッグ または [←][→] キー",
+    "platform_note": "スマホ縦画面対応（カードスワイプ操作）・PC両対応",
+    "tags": ["アクション", "カジュアル", "パズル", "縦画面", "Gmini"]
   },
   {
     "id": "newton-cradle",

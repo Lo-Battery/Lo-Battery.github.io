@@ -27,12 +27,16 @@
     }
     canvas {
       display: block;
-      width: min(100vw, 177.78vh);
-      height: min(100vh, 56.25vw);
+      width: min(100vw, 56.25vh);
+      height: min(100vh, 177.78vw);
       outline: none;
-      cursor: pointer;
+      cursor: grab;
       touch-action: none;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+      border-radius: 14px;
+    }
+    canvas:active {
+      cursor: grabbing;
     }
     #back-link {
       position: fixed;
