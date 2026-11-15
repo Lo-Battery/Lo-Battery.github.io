@@ -60,10 +60,6 @@
     .top-nav-btn:active {
       transform: scale(0.95);
     }
-    body.is-mobile .top-nav-btn {
-      padding: 8px 16px;
-      font-size: 14px;
-    }
     #back-link {
       top: max(8px, env(safe-area-inset-top));
       left: max(12px, env(safe-area-inset-left));
@@ -148,11 +144,6 @@
   </div>
 
   <script type="module">
-    const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
-      (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent)) ||
-      window.matchMedia("(pointer: coarse)").matches;
-    document.body.classList.add(isMobileDevice ? "is-mobile" : "is-pc");
-
     const canvas = document.getElementById("gmini-canvas");
     const loaderContainer = document.getElementById("loader-container");
     const statusEl = document.getElementById("gmini-status");
