@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#082015" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>字義で覚える麻雀役マスター</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #082015;
+      color: #e6ecf5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: min(100vw, 177.78vh);
+      height: min(100vh, 56.25vw);
+      outline: none;
+      cursor: pointer;
+      touch-action: none;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+    }
+    .top-nav-btn {
+      position: fixed;
+      z-index: 30;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(8, 32, 21, 0.88);
+      border: 1px solid rgba(246, 211, 101, 0.6);
+      color: #f6d365;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+    .top-nav-btn:hover {
+      background: rgba(246, 211, 101, 0.25);
+    }
+    .top-nav-btn:active {
+      transform: scale(0.95);
+    }
+    #back-link {
+      top: 12px;
+      left: 12px;
+    }
+    #fullscreen-btn {
+      top: 12px;
+      right: 12px;
+    }
+    #loader-container {
+      position: fixed;
+      inset: 0;
+      background: #082015;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 20;
+      transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+    .title-logo {
+      font-size: 24px;
+      font-weight: 700;
+      color: #f6d365;
+      letter-spacing: 0.05em;
+    }
+    .progress-bar {
+      width: 280px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #45c8f5, #f6d365);
+      transition: width 0.15s ease-out;
+    }
+    #status {
+      font-size: 12px;
+      color: #a2d8c3;
+    }
+  </style>
+</head>
+<body>
+  <a id="back-link" class="top-nav-btn" href="../../index.html">← ゲーム一覧</a>
+  <button id="fullscreen-btn" class="top-nav-btn">⛶ 全画面</button>
+
+  <div id="loader-container">
+    <div class="title-logo">🀄 字義で覚える麻雀役マスター</div>
+    <div class="progress-bar">
+      <div id="progress-fill" class="progress-fill"></div>
+    </div>
+    <div id="status">ゲーム読み込み中...</div>
+  </div>
+
+  <canvas id="gmini-canvas" tabindex="0"></canvas>
+
+  <script type="module">
+    const statusEl = document.getElementById("status");
+    const progressFill = document.getElementById("progress-fill");
+    const loaderContainer = document.getElementById("loader-container");
+    const canvas = document.getElementById("gmini-canvas");
+    const fsBtn = document.getElementById("fullscreen-btn");
+
+    function focusCanvas() {
+      if (canvas && document.activeElement !== canvas) {
+        canvas.focus();
+      }
+    }
+    window.addEventListener("pointerdown", (e) => {
+      if (e.target && (e.target.id === "back-link" || e.target.id === "fullscreen-btn")) return;
+      focusCanvas();
+      if (loaderContainer && loaderContainer.style.opacity === "1") {
+        loaderContainer.style.opacity = "0";
+      }
+    });
+    window.addEventListener("keydown", (e) => {
+      focusCanvas();
+      if (["Space", "Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+        e.preventDefault();
+      }
+      if (loaderContainer && loaderContainer.style.opacity === "1") {
+        loaderContainer.style.opacity = "0";
+      }
+    }, { capture: true });
+
+    if (fsBtn) {
+      fsBtn.addEventListener("click", () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+          fsBtn.textContent = "✕ 縮小";
+        } else {
+          document.exitFullscreen().catch(() => {});
+          fsBtn.textContent = "⛶ 全画面";
+        }
+      });
+      document.addEventListener("fullscreenchange", () => {
+        if (!document.fullscreenElement && fsBtn) {
+          fsBtn.textContent = "⛶ 全画面";
+        }
+      });
+    }
+
+    async function fetchWithProgress(url) {
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
+      }
+      const contentLength = resp.headers.get("Content-Length");
+      if (!contentLength || !resp.body) {
+        statusEl.textContent = "WASMダウンロード中...";
+        return resp;
+      }
+      const total = parseInt(contentLength, 10);
+      let loaded = 0;
+      const reader = resp.body.getReader();
+      const chunks = [];
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        loaded += value.length;
+        const pct = Math.min(100, Math.round((loaded / total) * 100));
+        const mb = (loaded / (1024 * 1024)).toFixed(1);
+        const totalMb = (total / (1024 * 1024)).toFixed(1);
+        statusEl.textContent = `ゲーム読み込み中... ${pct}% (${mb}MB / ${totalMb}MB)`;
+        progressFill.style.width = `${pct}%`;
+      }
+      const allBytes = new Uint8Array(loaded);
+      let offset = 0;
+      for (const chunk of chunks) {
+        allBytes.set(chunk, offset);
+        offset += chunk.length;
+      }
+      statusEl.textContent = "エンジン起動中... / Initializing engine...";
+      progressFill.style.width = "100%";
+      return allBytes.buffer;
+    }
+
+    import init from "./pkg/mahjong_master_lib.js";
+
+    (async () => {
+      try {
+        const wasmBytes = await fetchWithProgress("./pkg/mahjong_master_lib_bg.wasm");
+        await init(wasmBytes);
+        focusCanvas();
+        statusEl.textContent = "準備完了！";
+        setTimeout(() => {
+          if (loaderContainer) loaderContainer.style.opacity = "0";
+        }, 600);
+      } catch (e) {
+        console.error("Gmini WASM boot error:", e);
+        if (statusEl) {
+          statusEl.style.color = "#ff6b6b";
+          statusEl.textContent = "起動エラー: " + (e?.message || e) + " (Ctrl+Shift+R で再読み込みをお試しください)";
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
