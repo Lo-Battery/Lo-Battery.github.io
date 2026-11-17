@@ -8,7 +8,12 @@
     "thumbnail": "./assets/mahjong-master.png",
     "controls": "マウス/タップ: 選択・回答・打牌 (スマホ横画面推奨) | 数字キー[1]〜[4]: 選択肢即答 | [Esc]: タイトルに戻る",
     "platform_note": "スマホ横画面・PC・タブレット向け（タップ/クリック対応）",
-    "tags": ["パズル", "麻雀", "カジュアル", "Gmini"]
+    "tags": [
+      "パズル",
+      "麻雀",
+      "カジュアル",
+      "Gmini"
+    ]
   },
   {
     "id": "newaruro",
@@ -19,7 +24,13 @@
     "thumbnail": "./assets/newaruro.png",
     "controls": "スマホ: 左右カードスワイプ (縦画面) | PC: マウスドラッグ または [←][→] キー",
     "platform_note": "スマホ縦画面対応（カードスワイプ操作）・PC両対応",
-    "tags": ["アクション", "カジュアル", "パズル", "縦画面", "Gmini"]
+    "tags": [
+      "アクション",
+      "カジュアル",
+      "パズル",
+      "縦画面",
+      "Gmini"
+    ]
   },
   {
     "id": "newton-cradle",
@@ -28,9 +39,14 @@
     "engine": "Gmini 2D Engine (Rust + WebGPU / WebGL2)",
     "url": "./games/newton-cradle/index.html",
     "thumbnail": "./assets/newton-cradle.png",
-    "controls": "マウスドラッグ: 玉を掴んで引っ張る・衝突させる | 1〜4キー: 倍速切替 | ショップ内1〜3キー: ドラフト/球配置替/スキル一覧切替",
-    "platform_note": "PCブラウザ向け（WebGPU / WebGL2・インストール不要）",
-    "tags": ["ローグライク", "物理演算", "2D", "Gmini"]
+    "controls": "タッチ/マウスドラッグ: 玉を掴んで引っ張る・弾く | 画面右ボタン: 倍速切替(1~4x)・ショップ | 1〜4キー/Space(PC)",
+    "platform_note": "スマホ横画面・PCブラウザ向け（全画面対応・タップ/スワイプ対応）",
+    "tags": [
+      "ローグライク",
+      "物理演算",
+      "カジュアル",
+      "Gmini"
+    ]
   },
   {
     "id": "kuso-daifugo",
@@ -39,9 +55,15 @@
     "engine": "Gmini 2D Engine (Rust + WebGPU / WebGL2)",
     "url": "./games/kuso-daifugo/index.html",
     "thumbnail": "./assets/kuso-daifugo.png",
-    "controls": "マウス/タップ: カード選択・出す・パス (スマホ横画面推奨) | 矢印キー: 選択移動 | Space: 決定 | 1〜5: 人数・ルールプリセット切替",
-    "platform_note": "スマホ横画面・PC・タブレット向け（タップ/クリック対応）",
-    "tags": ["カード", "大富豪", "カジュアル", "Gmini"]
+    "controls": "スマホ: タップ操作 (縦画面対応) | PC: マウス または [Space]: 出す / [P]: パス / [H]: ヒント",
+    "platform_note": "スマホ縦画面対応（タップ操作）・PC両対応",
+    "tags": [
+      "カード",
+      "大富豪",
+      "カジュアル",
+      "縦画面",
+      "Gmini"
+    ]
   },
   {
     "id": "gmini-survivors",
@@ -52,6 +74,11 @@
     "thumbnail": "./assets/gmini-survivors.png",
     "controls": "WASD / 矢印: 移動 | Space / Aボタン: ダッシュ | クリック: 照準強化 | 1/2/3 or クリック: レベルアップ選択",
     "platform_note": "PCブラウザ向け（キーボードWASD操作・インストール不要）",
-    "tags": ["アクション", "ローグライク", "2D", "Gmini"]
+    "tags": [
+      "アクション",
+      "ローグライク",
+      "2D",
+      "Gmini"
+    ]
   }
 ]

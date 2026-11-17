@@ -31,17 +31,18 @@
     }
     canvas {
       display: block;
-      width: min(100vw, 177.78vh);
-      height: min(100vh, 56.25vw);
+      width: min(100vw, 56.25vh);
+      height: min(100vh, 177.78vw);
       outline: none;
       cursor: pointer;
       touch-action: none;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+      border-radius: 12px;
     }
     .top-nav-btn {
       position: fixed;
       z-index: 30;
-      padding: 6px 14px;
+      padding: 7px 14px;
       border-radius: 999px;
       background: rgba(8, 28, 21, 0.88);
       border: 1px solid rgba(212, 167, 86, 0.6);
@@ -66,28 +67,6 @@
     #fullscreen-btn {
       top: max(8px, env(safe-area-inset-top));
       right: max(12px, env(safe-area-inset-right));
-    }
-    #rotate-hint {
-      display: none;
-      position: fixed;
-      top: max(48px, calc(env(safe-area-inset-top) + 40px));
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(8, 28, 21, 0.95);
-      border: 1px solid rgba(212, 167, 86, 0.75);
-      color: #f3dfb0;
-      padding: 8px 18px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 700;
-      z-index: 25;
-      pointer-events: none;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
-      white-space: nowrap;
-    }
-    @media (orientation: portrait) and (max-width: 850px) {
-      #rotate-hint { display: block; }
     }
     #loader-container {
       position: fixed;
@@ -129,9 +108,8 @@
 <body>
   <a id="back-link" class="top-nav-btn" href="../../index.html" tabindex="-1">← 一覧へ</a>
   <button id="fullscreen-btn" class="top-nav-btn" type="button" tabindex="-1">⛶ 全画面</button>
-  <div id="rotate-hint">📱 スマホを横向きにするとカードが大きく見やすくなります</div>
 
-  <canvas id="gmini-canvas" width="1280" height="720" tabindex="0"></canvas>
+  <canvas id="gmini-canvas" width="720" height="1280" tabindex="0"></canvas>
   <div id="loader-container">
     <div id="gmini-status">読み込み準備中... / Preparing WASM...</div>
     <div id="progress-bar-bg"><div id="progress-bar-fill"></div></div>
