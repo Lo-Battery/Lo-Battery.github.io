@@ -31,13 +31,20 @@
     }
     canvas {
       display: block;
-      width: min(100vw, 56.25vh);
-      height: min(100vh, 177.78vw);
       outline: none;
       cursor: pointer;
       touch-action: none;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
       border-radius: 12px;
+      transition: width 0.2s ease, height 0.2s ease;
+    }
+    canvas.mode-portrait {
+      width: min(100vw, 56.25vh);
+      height: min(100vh, 177.78vw);
+    }
+    canvas.mode-landscape {
+      width: min(100vw, 177.78vh);
+      height: min(100vh, 56.25vw);
     }
     .top-nav-btn {
       position: fixed;
@@ -63,6 +70,15 @@
     #back-link {
       top: max(8px, env(safe-area-inset-top));
       left: max(12px, env(safe-area-inset-left));
+    }
+    #mode-toggle-btn {
+      top: max(8px, env(safe-area-inset-top));
+      right: max(112px, env(safe-area-inset-right));
+      color: #7bed9f;
+      border-color: rgba(123, 237, 159, 0.6);
+    }
+    #mode-toggle-btn:hover {
+      background: rgba(123, 237, 159, 0.25);
     }
     #fullscreen-btn {
       top: max(8px, env(safe-area-inset-top));
@@ -107,9 +123,10 @@
 </head>
 <body>
   <a id="back-link" class="top-nav-btn" href="../../index.html" tabindex="-1">← 一覧へ</a>
+  <button id="mode-toggle-btn" class="top-nav-btn" type="button" tabindex="-1">📱 縦画面</button>
   <button id="fullscreen-btn" class="top-nav-btn" type="button" tabindex="-1">⛶ 全画面</button>
 
-  <canvas id="gmini-canvas" width="720" height="1280" tabindex="0"></canvas>
+  <canvas id="gmini-canvas" class="mode-landscape" width="1280" height="720" tabindex="0"></canvas>
   <div id="loader-container">
     <div id="gmini-status">読み込み準備中... / Preparing WASM...</div>
     <div id="progress-bar-bg"><div id="progress-bar-fill"></div></div>
@@ -121,6 +138,55 @@
     const statusEl = document.getElementById("gmini-status");
     const progressFill = document.getElementById("progress-bar-fill");
     const fsBtn = document.getElementById("fullscreen-btn");
+    const modeBtn = document.getElementById("mode-toggle-btn");
+
+    function getSavedMode() {
+      const saved = localStorage.getItem("kuso_daifugo_display_mode");
+      if (saved === "portrait" || saved === "landscape") return saved;
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isPortraitScreen = window.innerHeight > window.innerWidth;
+      return (isMobile || isPortraitScreen) ? "portrait" : "landscape";
+    }
+
+    let currentMode = getSavedMode();
+
+    function applyMode(mode, triggerKeyEvent = false) {
+      currentMode = mode;
+      localStorage.setItem("kuso_daifugo_display_mode", mode);
+      if (mode === "portrait") {
+        canvas.classList.remove("mode-landscape");
+        canvas.classList.add("mode-portrait");
+        if (modeBtn) modeBtn.textContent = "📱 縦画面 (切替)";
+      } else {
+        canvas.classList.remove("mode-portrait");
+        canvas.classList.add("mode-landscape");
+        if (modeBtn) modeBtn.textContent = "💻 横画面 (切替)";
+      }
+
+      if (triggerKeyEvent) {
+        window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyM", key: "m", bubbles: true }));
+      }
+    }
+
+    applyMode(currentMode, false);
+
+    if (modeBtn) {
+      modeBtn.addEventListener("click", () => {
+        sessionStorage.setItem("kuso_daifugo_mode_pinned", "true");
+        const nextMode = currentMode === "portrait" ? "landscape" : "portrait";
+        applyMode(nextMode, true);
+        focusCanvas();
+      });
+    }
+
+    window.addEventListener("resize", () => {
+      if (!sessionStorage.getItem("kuso_daifugo_mode_pinned")) {
+        const autoMode = window.innerHeight > window.innerWidth ? "portrait" : "landscape";
+        if (autoMode !== currentMode) {
+          applyMode(autoMode, true);
+        }
+      }
+    });
 
     function focusCanvas() {
       if (document.activeElement !== canvas) {
@@ -128,7 +194,7 @@
       }
     }
     window.addEventListener("pointerdown", (e) => {
-      if (e.target && (e.target.id === "back-link" || e.target.id === "fullscreen-btn")) return;
+      if (e.target && (e.target.id === "back-link" || e.target.id === "fullscreen-btn" || e.target.id === "mode-toggle-btn")) return;
       focusCanvas();
       if (loaderContainer && loaderContainer.style.opacity === "1") {
         loaderContainer.style.opacity = "0";
@@ -136,6 +202,10 @@
     });
     window.addEventListener("keydown", (e) => {
       focusCanvas();
+      if (e.code === "Tab" || e.code === "KeyM") {
+        const nextMode = currentMode === "portrait" ? "landscape" : "portrait";
+        applyMode(nextMode, false);
+      }
       if (["Space", "Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
         e.preventDefault();
       }
