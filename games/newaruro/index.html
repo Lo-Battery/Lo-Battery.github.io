@@ -27,13 +27,20 @@
     }
     canvas {
       display: block;
-      width: min(100vw, 56.25vh);
-      height: min(100vh, 177.78vw);
       outline: none;
       cursor: grab;
       touch-action: none;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
       border-radius: 14px;
+      transition: width 0.2s ease, height 0.2s ease;
+    }
+    canvas.mode-portrait {
+      width: min(100vw, 56.25vh);
+      height: min(100vh, 177.78vw);
+    }
+    canvas.mode-landscape {
+      width: min(100vw, 177.78vh);
+      height: min(100vh, 56.25vw);
     }
     canvas:active {
       cursor: grabbing;
@@ -56,6 +63,29 @@
     #back-link:hover {
       background: rgba(56, 217, 169, 0.25);
       transform: scale(1.02);
+    }
+    #mode-toggle-btn {
+      position: fixed;
+      top: max(10px, env(safe-area-inset-top));
+      right: max(112px, env(safe-area-inset-right));
+      z-index: 30;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(13, 17, 26, 0.88);
+      border: 1px solid rgba(116, 185, 255, 0.6);
+      color: #74b9ff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+    #mode-toggle-btn:hover {
+      background: rgba(116, 185, 255, 0.25);
+      transform: scale(1.02);
+    }
+    #mode-toggle-btn:active {
+      transform: scale(0.95);
     }
     #fullscreen-btn {
       position: fixed;
@@ -119,8 +149,9 @@
 </head>
 <body>
   <a id="back-link" href="../../index.html" tabindex="-1">← 一覧へ</a>
+  <button id="mode-toggle-btn" type="button" tabindex="-1">📱 縦画面</button>
   <button id="fullscreen-btn" type="button" tabindex="-1">⛶ 全画面</button>
-  <canvas id="gmini-canvas" width="1280" height="720" tabindex="0"></canvas>
+  <canvas id="gmini-canvas" class="mode-portrait" width="1280" height="720" tabindex="0"></canvas>
   <div id="loader-container">
     <div id="gmini-status">読み込み準備中... / Preparing WASM...</div>
     <div id="progress-bar-bg"><div id="progress-bar-fill"></div></div>
@@ -132,6 +163,72 @@
     const statusEl = document.getElementById("gmini-status");
     const progressFill = document.getElementById("progress-bar-fill");
     const fsBtn = document.getElementById("fullscreen-btn");
+    const modeBtn = document.getElementById("mode-toggle-btn");
+
+    function getSavedMode() {
+      const saved = localStorage.getItem("newaruro_display_mode");
+      if (saved === "portrait" || saved === "landscape") return saved;
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isPortraitScreen = window.innerHeight > window.innerWidth;
+      return (isMobile || isPortraitScreen) ? "portrait" : "landscape";
+    }
+
+    let currentMode = getSavedMode();
+
+    function applyMode(mode, triggerKeyEvent = false) {
+      currentMode = mode;
+      localStorage.setItem("newaruro_display_mode", mode);
+      if (mode === "portrait") {
+        canvas.classList.remove("mode-landscape");
+        canvas.classList.add("mode-portrait");
+        if (modeBtn) modeBtn.textContent = "📱 縦画面 (切替)";
+      } else {
+        canvas.classList.remove("mode-portrait");
+        canvas.classList.add("mode-landscape");
+        if (modeBtn) modeBtn.textContent = "💻 横画面 (切替)";
+      }
+
+      if (triggerKeyEvent) {
+        window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyM", key: "m", bubbles: true }));
+      }
+    }
+
+    applyMode(currentMode, false);
+
+    if (modeBtn) {
+      modeBtn.addEventListener("click", () => {
+        sessionStorage.setItem("newaruro_mode_pinned", "true");
+        const nextMode = currentMode === "portrait" ? "landscape" : "portrait";
+        applyMode(nextMode, true);
+        focusCanvas();
+      });
+    }
+
+    window.addEventListener("resize", () => {
+      if (!sessionStorage.getItem("newaruro_mode_pinned")) {
+        const autoMode = window.innerHeight > window.innerWidth ? "portrait" : "landscape";
+        if (autoMode !== currentMode) {
+          applyMode(autoMode, true);
+        }
+      }
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Tab" || e.code === "KeyM") {
+        const nextMode = currentMode === "portrait" ? "landscape" : "portrait";
+        currentMode = nextMode;
+        localStorage.setItem("newaruro_display_mode", nextMode);
+        if (nextMode === "portrait") {
+          canvas.classList.remove("mode-landscape");
+          canvas.classList.add("mode-portrait");
+          if (modeBtn) modeBtn.textContent = "📱 縦画面 (切替)";
+        } else {
+          canvas.classList.remove("mode-portrait");
+          canvas.classList.add("mode-landscape");
+          if (modeBtn) modeBtn.textContent = "💻 横画面 (切替)";
+        }
+      }
+    });
 
     if (fsBtn) {
       fsBtn.addEventListener("click", () => {
@@ -156,7 +253,6 @@
       }
     }
 
-    // 右クリックのコンテキストメニューを抑制（ゲーム内の右クリック判定を有効化）
     window.addEventListener("contextmenu", (e) => {
       e.preventDefault();
       return false;
@@ -166,7 +262,6 @@
       return false;
     });
 
-    // タッチスクロール防止
     document.addEventListener("touchmove", (e) => {
       if (e.target === canvas) {
         e.preventDefault();
@@ -174,7 +269,7 @@
     }, { passive: false });
 
     window.addEventListener("pointerdown", (e) => {
-      if (e.target && e.target.id === "back-link") return;
+      if (e.target && (e.target.id === "back-link" || e.target.id === "mode-toggle-btn" || e.target.id === "fullscreen-btn")) return;
       focusCanvas();
       if (loaderContainer && loaderContainer.style.opacity === "1") {
         loaderContainer.style.opacity = "0";
