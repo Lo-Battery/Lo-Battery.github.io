@@ -2,12 +2,12 @@
   {
     "id": "chaos-battle",
     "title": "カオスバトル・シミュレーター",
-    "subtitle": "画像アップロード＆技・セリフ自由設定！何でもありのハチャメチャ大乱闘シミュレーション",
+    "subtitle": "画像アップロード対応！Scratch風6×6グリッドで繰り広げるカオスバトル再現シミュレーター",
     "engine": "Gmini 2D Engine (Rust + WebGPU / WebGL2)",
     "url": "./games/chaos-battle/index.html",
     "thumbnail": "./assets/chaos-battle.png",
-    "controls": "マウス/タップ: キャラ作成・画像アップロード・乱入・早送り・設定 | [Space]: 一時停止/再生",
-    "platform_note": "スマホ横画面・PC・タブレット向け（画像アップロード＆エディタ対応）",
+    "controls": "タップ/クリック: 画像アップロード・セル攻撃/蘇生・再生/一時停止・倍速・全員復活再戦 | [Space]: 再生/一時停止",
+    "platform_note": "スマホ横画面・PC・タブレット向け（画像アップロード＆Scratch風バトル再現）",
     "tags": [
       "シミュレーション",
       "カジュアル",
