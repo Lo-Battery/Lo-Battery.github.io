@@ -1,5 +1,21 @@
 [
   {
+    "id": "chaos-battle",
+    "title": "カオスバトル・シミュレーター",
+    "subtitle": "画像アップロード＆技・セリフ自由設定！何でもありのハチャメチャ大乱闘シミュレーション",
+    "engine": "Gmini 2D Engine (Rust + WebGPU / WebGL2)",
+    "url": "./games/chaos-battle/index.html",
+    "thumbnail": "./assets/chaos-battle.png",
+    "controls": "マウス/タップ: キャラ作成・画像アップロード・乱入・早送り・設定 | [Space]: 一時停止/再生",
+    "platform_note": "スマホ横画面・PC・タブレット向け（画像アップロード＆エディタ対応）",
+    "tags": [
+      "シミュレーション",
+      "カジュアル",
+      "対戦",
+      "Gmini"
+    ]
+  },
+  {
     "id": "mahjong-master",
     "title": "字義で覚える麻雀役マスター",
     "subtitle": "漢字の意味・語源から役を直感攻略！役判定クイズ・手牌組み替えパズル・役図鑑完全収録",

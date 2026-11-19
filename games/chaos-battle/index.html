@@ -1,0 +1,2116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>カオスバトル・シミュレーター (Chaos Battle Simulator)</title>
+  <style>
+    :root {
+      --bg: #070913;
+      --panel-bg: rgba(15, 20, 35, 0.88);
+      --panel-border: rgba(90, 160, 255, 0.35);
+      --accent: #ff0055;
+      --accent-glow: rgba(255, 0, 85, 0.5);
+      --cyan: #00e5ff;
+      --gold: #ffcc00;
+      --green: #00ff88;
+      --text: #f0f4fc;
+      --text-muted: #8c9bb5;
+      --font-main: "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-main);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+
+    /* 16:9 Viewport Container */
+    #viewport-container {
+      position: relative;
+      width: min(100vw, 177.78vh);
+      height: min(100vh, 56.25vw);
+      background: radial-gradient(circle at center, #141b34 0%, #060913 100%);
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
+      overflow: hidden;
+    }
+
+    /* Underlying Gmini Canvas */
+    #gmini-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: block;
+      outline: none;
+      pointer-events: auto;
+    }
+
+    /* Hybrid DOM UI Overlay */
+    #ui-overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 12px 18px;
+      z-index: 10;
+    }
+
+    .interactive {
+      pointer-events: auto;
+    }
+
+    /* Header Bar */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      z-index: 20;
+    }
+
+    .title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      backdrop-filter: blur(10px);
+      padding: 6px 16px;
+      border-radius: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    .title-logo {
+      font-size: 1.15rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      background: linear-gradient(90deg, #ff0055, #ffcc00, #00e5ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+      text-shadow: 0 0 20px rgba(255,0,85,0.4);
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: rgba(0, 229, 255, 0.2);
+      color: var(--cyan);
+      border: 1px solid var(--cyan);
+      font-weight: bold;
+    }
+
+    .controls-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      color: var(--text);
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .btn:hover {
+      background: rgba(40, 60, 100, 0.85);
+      border-color: var(--cyan);
+      transform: translateY(-1px);
+    }
+    .btn:active {
+      transform: translateY(1px);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #ff0055, #cc0044);
+      border-color: #ff3377;
+      color: #fff;
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #ff1a66, #e6004c);
+      box-shadow: 0 0 25px var(--accent-glow);
+    }
+    .btn-cyan {
+      background: linear-gradient(135deg, #0099cc, #007799);
+      border-color: var(--cyan);
+    }
+    .btn-warning {
+      background: linear-gradient(135deg, #ff9900, #cc7a00);
+      border-color: #ffaa00;
+    }
+
+    /* Battle Arena Layout */
+    .arena-container {
+      position: absolute;
+      top: 60px; bottom: 85px; left: 16px; right: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .fighters-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-content: center;
+      gap: 16px;
+      max-width: 1200px;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Fighter Card */
+    .fighter-card {
+      width: 160px;
+      height: 200px;
+      background: rgba(18, 24, 42, 0.85);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28), border-color 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+
+    .fighter-card.active-turn {
+      border-color: var(--gold);
+      box-shadow: 0 0 25px rgba(255, 204, 0, 0.6), inset 0 0 15px rgba(255, 204, 0, 0.2);
+      transform: scale(1.08);
+      z-index: 5;
+    }
+
+    .fighter-card.dead {
+      filter: grayscale(100%) brightness(0.5);
+      border-color: #444;
+      transform: scale(0.95);
+      opacity: 0.7;
+    }
+
+    .fighter-card.hurt {
+      animation: shake 0.3s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      20% { transform: translate(-8px, 4px) rotate(-6deg); }
+      40% { transform: translate(8px, -4px) rotate(6deg); }
+      60% { transform: translate(-5px, 2px) rotate(-3deg); }
+      80% { transform: translate(5px, -2px) rotate(3deg); }
+    }
+
+    .avatar-wrapper {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      position: relative;
+      margin-bottom: 8px;
+      padding: 3px;
+      background: linear-gradient(135deg, var(--char-color, #ff0055), transparent);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    .avatar-img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #111;
+      display: block;
+    }
+
+    .dead-stamp {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) rotate(-15deg);
+      background: rgba(220, 20, 60, 0.9);
+      color: #fff;
+      font-weight: 900;
+      font-size: 1.1rem;
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: 2px solid #fff;
+      text-shadow: 0 2px 4px #000;
+      display: none;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .fighter-card.dead .dead-stamp {
+      display: block;
+    }
+
+    .fighter-name {
+      font-size: 0.85rem;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 140px;
+      margin-bottom: 4px;
+      color: #fff;
+    }
+
+    /* HP Bar */
+    .hp-container {
+      width: 100%;
+      margin-top: auto;
+    }
+    .hp-numbers {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+    .hp-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .hp-bar-delay {
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      background: #ff5555;
+      transition: width 0.6s ease;
+      width: 100%;
+    }
+    .hp-bar-fill {
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      background: linear-gradient(90deg, #00ff88, #00cc66);
+      width: 100%;
+      transition: width 0.2s ease;
+    }
+
+    /* Action / Speech Bubble */
+    .fighter-bubble {
+      position: absolute;
+      top: -38px;
+      background: #fff;
+      color: #111;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      white-space: nowrap;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      opacity: 0;
+      transform: translateY(10px) scale(0.8);
+      transition: all 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      pointer-events: none;
+      z-index: 10;
+    }
+    .fighter-bubble::after {
+      content: "";
+      position: absolute;
+      bottom: -6px; left: 50%;
+      transform: translateX(-50%);
+      border-width: 6px 6px 0;
+      border-style: solid;
+      border-color: #fff transparent;
+    }
+    .fighter-bubble.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Bottom HUD / Log Bar */
+    .bottom-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      z-index: 20;
+    }
+
+    .log-box {
+      flex: 1;
+      height: 48px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 6px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    .log-line {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .log-line.hl {
+      color: var(--gold);
+    }
+
+    /* MEGA CUT-IN OVERLAY (Chaos Battle Style) */
+    #cutin-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      overflow: hidden;
+    }
+
+    .cutin-bg {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(circle, rgba(255, 0, 85, 0.5) 0%, rgba(0, 0, 0, 0.85) 80%);
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    /* Speed lines canvas */
+    #speedlines-canvas {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      opacity: 0.6;
+    }
+
+    .cutin-stripe {
+      position: absolute;
+      width: 140%;
+      height: 180px;
+      background: linear-gradient(90deg, transparent, rgba(20, 20, 30, 0.95) 20%, rgba(20, 20, 30, 0.95) 80%, transparent);
+      transform: rotate(-6deg);
+      border-top: 4px solid var(--gold);
+      border-bottom: 4px solid var(--cyan);
+      box-shadow: 0 0 40px rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 100px;
+    }
+
+    .cutin-content {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      transform: rotate(6deg); /* Counteract stripe rotation */
+    }
+
+    .cutin-avatar {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 4px solid var(--gold);
+      box-shadow: 0 0 30px var(--gold);
+      object-fit: cover;
+      background: #000;
+    }
+
+    .cutin-texts {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .cutin-actor-name {
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--cyan);
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    }
+
+    .cutin-quote {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 15px rgba(255,255,255,0.8), 0 2px 4px #000;
+      letter-spacing: 1px;
+    }
+
+    .cutin-skill-name {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--gold);
+      background: rgba(0, 0, 0, 0.6);
+      padding: 4px 12px;
+      border-radius: 8px;
+      display: inline-block;
+      width: fit-content;
+      border: 1px solid var(--gold);
+    }
+
+    /* K.O. & VICTORY OVERLAY */
+    #victory-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 120;
+      pointer-events: auto;
+      backdrop-filter: blur(12px);
+    }
+
+    .victory-title {
+      font-size: 3.5rem;
+      font-weight: 900;
+      background: linear-gradient(180deg, #fff 0%, #ffcc00 50%, #ff6600 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 40px rgba(255, 204, 0, 0.8);
+      margin-bottom: 16px;
+      animation: popIn 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.3); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .victory-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      background: rgba(25, 35, 60, 0.9);
+      border: 2px solid var(--gold);
+      padding: 24px 40px;
+      border-radius: 24px;
+      box-shadow: 0 0 50px rgba(255, 204, 0, 0.4);
+    }
+
+    .victory-avatar {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      border: 4px solid var(--gold);
+      box-shadow: 0 0 30px var(--gold);
+      object-fit: cover;
+    }
+
+    .victory-name {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .victory-quote {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--cyan);
+      max-width: 480px;
+      text-align: center;
+    }
+
+    /* MODAL: Character Manager & Custom Editor */
+    .modal-backdrop {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 150;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      width: min(92vw, 840px);
+      max-height: min(92vh, 640px);
+      background: #111728;
+      border: 2px solid var(--cyan);
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0, 229, 255, 0.3);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 14px 24px;
+      background: rgba(20, 30, 50, 0.9);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .modal-body {
+      padding: 20px 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Upload & Form Layout */
+    .editor-grid {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 24px;
+    }
+
+    .upload-zone {
+      border: 2px dashed rgba(0, 229, 255, 0.5);
+      border-radius: 16px;
+      background: rgba(0, 229, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      gap: 8px;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(255, 0, 85, 0.1);
+    }
+    .upload-preview {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 3px solid var(--cyan);
+      object-fit: cover;
+      background: #000;
+    }
+    .upload-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .form-group label {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--cyan);
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .form-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    input[type="text"], input[type="number"], select {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, select:focus {
+      border-color: var(--cyan);
+    }
+
+    .roster-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      max-height: 180px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.3);
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .roster-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 4px 12px 4px 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .roster-chip.selected {
+      border-color: var(--green);
+      background: rgba(0, 255, 136, 0.2);
+    }
+    .roster-chip img {
+      width: 24px; height: 24px; border-radius: 50%; object-fit: cover;
+    }
+
+    .modal-footer {
+      padding: 12px 24px;
+      background: rgba(20, 30, 50, 0.9);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    /* Screen Shake & Flash FX */
+    .screen-flash {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 90;
+      transition: opacity 0.1s ease-out;
+    }
+  </style>
+</head>
+<body>
+
+<div id="viewport-container">
+  <!-- Gmini Engine Canvas -->
+  <canvas id="gmini-canvas"></canvas>
+
+  <!-- Speedlines canvas for Cut-in FX -->
+  <canvas id="speedlines-canvas"></canvas>
+
+  <!-- Flash FX -->
+  <div id="screen-flash" class="screen-flash"></div>
+
+  <!-- HTML Hybrid Overlay -->
+  <div id="ui-overlay">
+    <!-- Header -->
+    <div class="header-bar">
+      <div class="title-group interactive">
+        <span class="title-logo">⚔️ CHAOS BATTLE SIM</span>
+        <span class="badge" id="mode-badge">BATTLE ROYALE</span>
+        <span class="badge" id="fighters-count-badge">6名参戦</span>
+      </div>
+
+      <div class="controls-group interactive">
+        <button class="btn btn-primary" id="btn-play-pause">⏸️ 一時停止</button>
+        <button class="btn" id="btn-step">⏭️ 1ターン</button>
+        <button class="btn" id="btn-speed">⚡ 速度: 1x</button>
+        <button class="btn btn-warning" id="btn-reinforce">🚨 乱入者を呼ぶ！</button>
+        <button class="btn btn-cyan" id="btn-manage-chars">👥 キャラ＆画像管理</button>
+        <button class="btn" id="btn-restart">🔄 再試合</button>
+      </div>
+    </div>
+
+    <!-- Arena Area (Cards will be mounted here) -->
+    <div class="arena-container">
+      <div class="fighters-grid" id="fighters-grid"></div>
+    </div>
+
+    <!-- Bottom HUD & Live Logs -->
+    <div class="bottom-bar">
+      <div class="log-box interactive" id="log-box">
+        <div class="log-line hl" id="latest-log">カオスバトル開幕！何でもありの戦いが始まる…！</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUT-IN OVERLAY -->
+  <div id="cutin-overlay">
+    <div class="cutin-bg" id="cutin-bg"></div>
+    <div class="cutin-stripe">
+      <div class="cutin-content">
+        <img id="cutin-avatar" class="cutin-avatar" src="" alt="avatar" />
+        <div class="cutin-texts">
+          <div id="cutin-actor-name" class="cutin-actor-name">道化師ドナルド</div>
+          <div id="cutin-quote" class="cutin-quote">「嬉しくなると、つい殺っちゃうんだ☆」</div>
+          <div id="cutin-skill-name" class="cutin-skill-name">アルティメット・ランランルー☆</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VICTORY OVERLAY -->
+  <div id="victory-overlay">
+    <div class="victory-title">VICTORY!! 優勝</div>
+    <div class="victory-card">
+      <img id="victory-avatar" class="victory-avatar" src="" alt="winner" />
+      <div id="victory-name" class="victory-name">勝者名</div>
+      <div id="victory-quote" class="victory-quote">「勝利のセリフ」</div>
+      <div style="display:flex; gap:12px; margin-top:12px;">
+        <button class="btn btn-primary" id="btn-victory-restart">もう一度バトルする！</button>
+        <button class="btn" id="btn-victory-close">結果を閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Character Manager & Custom Upload -->
+  <div class="modal-backdrop" id="char-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>👥 キャラクター管理＆オリジナル画像アップロード</span>
+        </div>
+        <button class="btn" id="btn-close-modal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div style="font-size:0.85rem; color:var(--text-muted); line-height:1.4;">
+          手持ちの画像（PNG, JPG, WebP, GIF）をアップロードして、自分だけのカオスキャラクターを作成！<br>
+          作成したキャラクターはブラウザに自動保存され、いつでもバトルに参戦できます。
+        </div>
+
+        <!-- Editor Grid -->
+        <div class="editor-grid">
+          <!-- Left: Image Upload Zone -->
+          <div class="upload-zone" id="drop-zone">
+            <input type="file" id="file-input" accept="image/*" style="display:none;" />
+            <img id="upload-preview" class="upload-preview" src="" alt="Preview" />
+            <div style="font-weight:bold; font-size:0.85rem; color:var(--cyan);">📁 画像をアップロード</div>
+            <div class="upload-hint">ここをクリック、または画像をドラッグ＆ドロップ</div>
+            <button type="button" class="btn" id="btn-select-file" style="padding:4px 8px; font-size:0.75rem;">ファイル選択</button>
+          </div>
+
+          <!-- Right: Character Stats & Quotes Form -->
+          <div class="editor-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label>キャラクター名</label>
+                <input type="text" id="input-char-name" placeholder="例: 俺 / 友達のA君 / 破壊神" />
+              </div>
+              <div class="form-group">
+                <label>テーマカラー</label>
+                <input type="text" id="input-char-color" placeholder="#ff0055" value="#00e5ff" />
+              </div>
+            </div>
+
+            <div class="form-row-3">
+              <div class="form-group">
+                <label>最大HP (100〜99999)</label>
+                <input type="number" id="input-char-hp" value="1200" />
+              </div>
+              <div class="form-group">
+                <label>攻撃力 (ATK)</label>
+                <input type="number" id="input-char-atk" value="250" />
+              </div>
+              <div class="form-group">
+                <label>素早さ (SPD)</label>
+                <input type="number" id="input-char-spd" value="120" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>必殺技名</label>
+                <input type="text" id="input-skill-name" placeholder="例: カオスメガ粒子砲" value="真・必殺技" />
+              </div>
+              <div class="form-group">
+                <label>技タイプ</label>
+                <select id="select-skill-target">
+                  <option value="single_enemy">単体超絶ダメージ</option>
+                  <option value="all_enemies">敵全体攻撃</option>
+                  <option value="random_multi">ランダム乱打連続攻撃</option>
+                  <option value="heal_self">自己超回復</option>
+                  <option value="instant_death_gamble">即死ギャンブル (一撃必殺)</option>
+                  <option value="chaos_shuffle">カオスシャッフル (全員HP再編)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>必殺技セリフ (カットイン)</label>
+                <input type="text" id="input-skill-quote" value="これで終わりだあああ！" />
+              </div>
+              <div class="form-group">
+                <label>撃破時（脱落）セリフ</label>
+                <input type="text" id="input-dead-quote" value="ば、バカな…チーン" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>通常攻撃セリフ</label>
+                <input type="text" id="input-atk-quote" value="喰らいなさい！" />
+              </div>
+              <div class="form-group">
+                <label>勝利時セリフ</label>
+                <input type="text" id="input-win-quote" value="完全勝利！相手にならんな。" />
+              </div>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:8px;">
+              <button class="btn btn-primary" id="btn-save-custom-char">💾 このキャラを登録・保存</button>
+              <button class="btn" id="btn-reset-form">クリア</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Roster Selection -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-weight:bold; font-size:0.9rem; color:var(--cyan);">参戦キャラクター選択 (チェックしたキャラが出撃)</div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn" id="btn-select-all" style="padding:4px 8px; font-size:0.75rem;">全選択</button>
+              <button class="btn" id="btn-export-chars" style="padding:4px 8px; font-size:0.75rem;">JSONエクスポート</button>
+            </div>
+          </div>
+          <div class="roster-list" id="roster-list"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn" id="btn-modal-cancel">閉じる</button>
+        <button class="btn btn-primary" id="btn-apply-roster">⚔️ 選択したメンバーでバトル開始！</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==========================================================================
+   1. PROCEDURAL WEB AUDIO SYNTHESIZER (BGM & SFX)
+   ========================================================================== */
+class ChaosAudio {
+  constructor() {
+    this.ctx = null;
+    this.isMuted = false;
+  }
+
+  init() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AudioCtx();
+    }
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  playPunch() {
+    this.init();
+    if (this.isMuted) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(150, t);
+    osc.frequency.exponentialRampToValueAtTime(30, t + 0.12);
+
+    gain.gain.setValueAtTime(0.8, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.12);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.13);
+  }
+
+  playLaser() {
+    this.init();
+    if (this.isMuted) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(900, t);
+    osc.frequency.exponentialRampToValueAtTime(120, t + 0.25);
+
+    gain.gain.setValueAtTime(0.6, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.26);
+  }
+
+  playExplosion() {
+    this.init();
+    if (this.isMuted) return;
+    const t = this.ctx.currentTime;
+    // White noise buffer
+    const bufferSize = this.ctx.sampleRate * 0.45;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
+    }
+
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(800, t);
+    filter.frequency.linearRampToValueAtTime(80, t + 0.45);
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(1.0, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.45);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.ctx.destination);
+    noise.start(t);
+  }
+
+  playBell() {
+    // "チーン♪" (Death bell sound)
+    this.init();
+    if (this.isMuted) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1568, t); // G6
+
+    gain.gain.setValueAtTime(0.8, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 1.2);
+  }
+
+  playCutin() {
+    this.init();
+    if (this.isMuted) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(300, t);
+    osc.frequency.exponentialRampToValueAtTime(1200, t + 0.2);
+
+    gain.gain.setValueAtTime(0.4, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.26);
+  }
+
+  playFanfare() {
+    this.init();
+    if (this.isMuted) return;
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    notes.forEach((freq, idx) => {
+      const t = this.ctx.currentTime + idx * 0.12;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(0.5, t);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + (idx === 3 ? 0.8 : 0.2));
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(t);
+      osc.stop(t + (idx === 3 ? 0.85 : 0.22));
+    });
+  }
+
+  playSiren() {
+    this.init();
+    if (this.isMuted) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(600, t);
+    osc.frequency.linearRampToValueAtTime(900, t + 0.2);
+    osc.frequency.linearRampToValueAtTime(600, t + 0.4);
+    osc.frequency.linearRampToValueAtTime(900, t + 0.6);
+    gain.gain.setValueAtTime(0.4, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.7);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.75);
+  }
+}
+
+const audio = new ChaosAudio();
+
+/* ==========================================================================
+   2. SVG DEFAULT AVATAR GENERATOR (For Presets without external images)
+   ========================================================================== */
+function makeDefaultSvgAvatar(name, color, symbol) {
+  return "data:image/svg+xml;utf8," + encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <defs>
+        <radialGradient id="grad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="${color}" />
+          <stop offset="100%" stop-color="#0a0e1a" />
+        </radialGradient>
+      </defs>
+      <circle cx="50" cy="50" r="48" fill="url(#grad)" stroke="${color}" stroke-width="4"/>
+      <text x="50%" y="54%" font-size="34" font-family="sans-serif" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central">
+        ${symbol || name.charAt(0)}
+      </text>
+    </svg>
+  `);
+}
+
+const PRESET_CHARACTERS = [
+  {
+    id: "donald",
+    name: "道化師ドナルド",
+    image_url: makeDefaultSvgAvatar("ドナルド", "#ff2222", "🤡"),
+    max_hp: 1200, atk: 240, def: 120, spd: 130, color: "#ff2222",
+    intro_quote: "ドナルドはお腹が空くと…暴れちゃうんだ☆",
+    attack_quote: "ハンバーガー4個分くらいのパワー！",
+    hurt_quote: "ポテトもいかがですかぁ！？",
+    dead_quote: "ドナルドマジック…失敗☆チーン",
+    win_quote: "ランランルー！自然と体が動いちゃうんだ！",
+    skill: {
+      name: "アルティメット・ランランルー☆",
+      quote: "嬉しくなると、つい殺っちゃうんだ☆",
+      target: "all_enemies", power: 180, hit_rate: 90
+    },
+    is_custom: false
+  },
+  {
+    id: "brolon",
+    name: "超筋肉ブロロン",
+    image_url: makeDefaultSvgAvatar("ブロロン", "#44ff44", "💪"),
+    max_hp: 2000, atk: 320, def: 180, spd: 80, color: "#44ff44",
+    intro_quote: "俺が化け物…？ 違う、俺は悪魔だぁぁ！",
+    attack_quote: "無駄な抵抗はやめろぉ！",
+    hurt_quote: "効かぬ…効かぬのだぁぁ！",
+    dead_quote: "うわあああ！親父ぃぃぃ！",
+    win_quote: "カカロットォォォ！次は貴様だぁ！",
+    skill: {
+      name: "ギガンティック・デストラクション",
+      quote: "手加減などという言葉は知らん！",
+      target: "single_enemy", power: 350, hit_rate: 85
+    },
+    is_custom: false
+  },
+  {
+    id: "shuzo",
+    name: "熱血の太陽シュウゾウ",
+    image_url: makeDefaultSvgAvatar("シュウゾウ", "#ff8800", "🔥"),
+    max_hp: 1500, atk: 220, def: 140, spd: 120, color: "#ff8800",
+    intro_quote: "今日からお前は…富士山だ！！",
+    attack_quote: "諦めんなよ！もっと熱くなれよ！！",
+    hurt_quote: "まだまだ！崖っぷちありがとう！",
+    dead_quote: "しじみが…トゥルル…",
+    win_quote: "一番になれ！世界で一番の笑顔を見せてくれ！",
+    skill: {
+      name: "激アツ・パッションメガトンエール",
+      quote: "本気を出せ！本気になれば何でもできる！",
+      target: "heal_self", power: 200, hit_rate: 100
+    },
+    is_custom: false
+  },
+  {
+    id: "hiroyuki",
+    name: "論破王ヒロユキ",
+    image_url: makeDefaultSvgAvatar("ヒロユキ", "#ffcc00", "🗣️"),
+    max_hp: 950, atk: 270, def: 110, spd: 150, color: "#ffcc00",
+    intro_quote: "なんか勝手に集まって戦ってるの、頭悪そうですよね",
+    attack_quote: "事実を言ったまでですけど",
+    hurt_quote: "嘘つくのやめてもらっていいですか？",
+    dead_quote: "知らんけど。フランス帰りますー",
+    win_quote: "僕の勝ちってことでいいっすよね。反論ある人います？",
+    skill: {
+      name: "それってあなたの感想ですよね？",
+      quote: "なんかそういうデータあるんですか？",
+      target: "instant_death_gamble", power: 999, hit_rate: 40
+    },
+    is_custom: false
+  },
+  {
+    id: "magical_alice",
+    name: "魔法少女マジカル☆アリス",
+    image_url: makeDefaultSvgAvatar("アリス", "#ff66cc", "✨"),
+    max_hp: 900, atk: 340, def: 90, spd: 140, color: "#ff66cc",
+    intro_quote: "愛と正義のステッキで、みんなまとめて浄化しちゃうよ☆",
+    attack_quote: "えいっ☆星くずになぁれ！",
+    hurt_quote: "きゃあっ！コスチュームが破れちゃう！",
+    dead_quote: "魔法のチャージが…ゼロになっちゃった…",
+    win_quote: "完全勝利☆みんなの笑顔がわたしのエネルギー！",
+    skill: {
+      name: "ディバイン・スターライトブラスター",
+      quote: "全力全開！少し頭冷やそうか…！",
+      target: "single_enemy", power: 320, hit_rate: 92
+    },
+    is_custom: false
+  },
+  {
+    id: "space_cat",
+    name: "宇宙猫スペースキャット",
+    image_url: makeDefaultSvgAvatar("宇宙猫", "#9966ff", "🐱"),
+    max_hp: 1100, atk: 230, def: 130, spd: 160, color: "#9966ff",
+    intro_quote: "ニャーン（我が真理を悟りし時、宇宙は揺らぐ）",
+    attack_quote: "シャーッ！（高次元ネコパンチ）",
+    hurt_quote: "ニャッ！？（箱に入って現実逃避）",
+    dead_quote: "ニャ…（ブラックホールへ帰還）",
+    win_quote: "ゴロゴロ…（全銀河をカリカリの支配下に置いた）",
+    skill: {
+      name: "虚無と悟りのスーパーノヴァ",
+      quote: "ニャーーーーーーン！！！（時空崩壊）",
+      target: "random_multi", power: 120, hit_rate: 88
+    },
+    is_custom: false
+  },
+  {
+    id: "cyborg_boss",
+    name: "鋼鉄のサイボーグ総帥",
+    image_url: makeDefaultSvgAvatar("サイボーグ", "#00e5ff", "🤖"),
+    max_hp: 1800, atk: 220, def: 210, spd: 75, color: "#00e5ff",
+    intro_quote: "フハハ！貴様らのデータはすべて解析済みだ！",
+    attack_quote: "我がナノマシン装甲を貫くことはできん！",
+    hurt_quote: "バカな、演算エラーだと…！？",
+    dead_quote: "自爆装置…作動…ドカーン！",
+    win_quote: "人類よ平伏せ！我が新世界秩序の完成だ！",
+    skill: {
+      name: "最終軌道衛星オメガレーザー",
+      quote: "ターゲットロックオン…消滅せよ！",
+      target: "all_enemies", power: 190, hit_rate: 85
+    },
+    is_custom: false
+  },
+  {
+    id: "kungfu_master",
+    name: "古のカンフー仙人",
+    image_url: makeDefaultSvgAvatar("カンフー", "#00ff88", "🥋"),
+    max_hp: 1050, atk: 290, def: 120, spd: 145, color: "#00ff88",
+    intro_quote: "ワシの拳を見切れる若者がおるかの？フォッフォッフォ",
+    attack_quote: "ほあたぁぁっ！",
+    hurt_quote: "ぬうっ！腰にきたわい…！",
+    dead_quote: "老兵は去るのみ…じゃが次は負けんぞ",
+    win_quote: "極意とは無心なり。茶でもしばくとするかの",
+    skill: {
+      name: "奥義・天舞連環掌",
+      quote: "あたたたたたたた！お前はもう倒れておる！",
+      target: "random_multi", power: 140, hit_rate: 95
+    },
+    is_custom: false
+  }
+];
+
+/* ==========================================================================
+   3. HYBRID BRIDGE (JS <-> RUST WASM) & FALLBACK SIMULATOR
+   ========================================================================== */
+window.gminiOverlay = {
+  actions: [],
+  hasWasmEngine: false,
+  sendAction(action, payload) {
+    this.actions.push({ action, payload: payload || {} });
+    if (!this.hasWasmEngine && window.fallbackSim) {
+      window.fallbackSim.handleAction(action, payload || {});
+    }
+  },
+  popActions() {
+    this.hasWasmEngine = true;
+    const list = this.actions;
+    this.actions = [];
+    return list;
+  },
+  onEvent(event, data) {
+    if (window.onRustEvent) {
+      window.onRustEvent(event, data);
+    }
+  }
+};
+
+class FallbackBattleSimulator {
+  constructor() {
+    this.fighters = [];
+    this.isPaused = false;
+    this.turnCount = 0;
+    this.timer = null;
+    this.interval = 1200;
+  }
+
+  handleAction(action, payload) {
+    switch (action) {
+      case "start_battle":
+        this.startBattle(payload.fighters, payload.mode);
+        break;
+      case "step_turn":
+        this.stepTurn();
+        break;
+      case "toggle_pause":
+        this.isPaused = !this.isPaused;
+        window.gminiOverlay.onEvent("pause_changed", { is_paused: this.isPaused });
+        break;
+      case "set_speed":
+        if (payload.speed === "normal") this.interval = 1200;
+        else if (payload.speed === "fast") this.interval = 550;
+        else if (payload.speed === "hyper") this.interval = 220;
+        else if (payload.speed === "skip") this.interval = 40;
+        this.resetTimer();
+        break;
+      case "reset_battle":
+        this.resetBattle();
+        break;
+      case "add_reinforcement":
+        this.addReinforcement(payload.character);
+        break;
+    }
+  }
+
+  startBattle(characters, mode) {
+    this.fighters = characters.map((c, idx) => ({
+      def: c,
+      current_hp: c.max_hp,
+      team_id: idx,
+      is_alive: true,
+      gauge: (idx * 15) % 60,
+    }));
+    this.turnCount = 0;
+    this.isPaused = false;
+    window.gminiOverlay.onEvent("battle_init", { fighters: this.fighters, mode });
+    this.resetTimer();
+  }
+
+  resetTimer() {
+    if (this.timer) clearInterval(this.timer);
+    this.timer = setInterval(() => {
+      if (!this.isPaused && !window.gminiOverlay.hasWasmEngine) {
+        this.stepTurn();
+      }
+    }, this.interval);
+  }
+
+  stepTurn() {
+    const alive = this.fighters.filter(f => f.is_alive);
+    if (alive.length <= 1) {
+      this.checkOver();
+      return;
+    }
+
+    // Pick random actor
+    const actor = alive[Math.floor(Math.random() * alive.length)];
+    const targets = alive.filter(f => f.def.id !== actor.def.id);
+    if (targets.length === 0) return;
+
+    this.turnCount++;
+    const events = [];
+
+    events.push({
+      type: "turn_start",
+      actor_id: actor.def.id,
+      gauge_percent: 100
+    });
+
+    const useSkill = Math.random() < 0.65;
+    const skill = useSkill ? actor.def.skill : {
+      name: "通常攻撃",
+      quote: actor.def.attack_quote,
+      target: "single_enemy",
+      power: 100,
+      hit_rate: 95
+    };
+
+    events.push({
+      type: "attack_cutin",
+      actor_id: actor.def.id,
+      actor_name: actor.def.name,
+      skill_name: skill.name,
+      quote: skill.quote,
+      target_kind: skill.target
+    });
+
+    if (skill.target === "heal_self") {
+      const heal = Math.floor(actor.def.max_hp * 0.45) + 50;
+      actor.current_hp = Math.min(actor.def.max_hp, actor.current_hp + heal);
+      events.push({
+        type: "heal_hit",
+        actor_id: actor.def.id,
+        heal,
+        current_hp: actor.current_hp,
+        max_hp: actor.def.max_hp
+      });
+    } else if (skill.target === "chaos_shuffle") {
+      const total = alive.reduce((s, f) => s + f.current_hp, 0);
+      const avg = Math.floor(total / alive.length);
+      alive.forEach(f => {
+        const noise = Math.floor((Math.random() - 0.5) * 100);
+        f.current_hp = Math.max(1, Math.min(f.def.max_hp, avg + noise));
+      });
+      events.push({
+        type: "chaos_shuffle",
+        message: "カオスシャッフル発動！全員のHPが再構築された！"
+      });
+    } else if (skill.target === "all_enemies") {
+      targets.forEach(tgt => {
+        this.applyDamage(actor, tgt, skill, events);
+      });
+    } else if (skill.target === "random_multi") {
+      const hits = 2 + Math.floor(Math.random() * 4);
+      for (let i = 0; i < hits; i++) {
+        const tgt = targets[Math.floor(Math.random() * targets.length)];
+        if (tgt && tgt.is_alive) {
+          this.applyDamage(actor, tgt, skill, events);
+        }
+      }
+    } else if (skill.target === "instant_death_gamble") {
+      const tgt = targets[Math.floor(Math.random() * targets.length)];
+      if (Math.random() < 0.35) {
+        const dmg = tgt.current_hp;
+        tgt.current_hp = 0;
+        tgt.is_alive = false;
+        events.push({
+          type: "damage_hit",
+          actor_id: actor.def.id,
+          target_id: tgt.def.id,
+          damage: dmg,
+          is_critical: true,
+          is_miss: false,
+          remaining_hp: 0,
+          max_hp: tgt.def.max_hp,
+          quote: "即死直撃！！"
+        });
+        events.push({
+          type: "fighter_down",
+          target_id: tgt.def.id,
+          target_name: tgt.def.name,
+          quote: tgt.def.dead_quote
+        });
+      } else {
+        actor.current_hp = Math.max(1, actor.current_hp - 80);
+        events.push({
+          type: "damage_hit",
+          actor_id: actor.def.id,
+          target_id: actor.def.id,
+          damage: 80,
+          is_critical: false,
+          is_miss: false,
+          remaining_hp: actor.current_hp,
+          max_hp: actor.def.max_hp,
+          quote: "暴発した！"
+        });
+      }
+    } else {
+      const tgt = targets[Math.floor(Math.random() * targets.length)];
+      this.applyDamage(actor, tgt, skill, events);
+    }
+
+    this.checkOver(events);
+
+    window.gminiOverlay.onEvent("battle_step", {
+      events,
+      turn: this.turnCount,
+      is_finished: alive.length <= 1,
+      winner_id: alive.length === 1 ? alive[0].def.id : null
+    });
+  }
+
+  applyDamage(actor, tgt, skill, events) {
+    if (!tgt.is_alive) return;
+    const isMiss = Math.random() * 100 > (skill.hit_rate || 95);
+    if (isMiss) {
+      events.push({
+        type: "damage_hit",
+        actor_id: actor.def.id,
+        target_id: tgt.def.id,
+        damage: 0,
+        is_critical: false,
+        is_miss: true,
+        remaining_hp: tgt.current_hp,
+        max_hp: tgt.def.max_hp,
+        quote: "回避した！"
+      });
+      return;
+    }
+
+    const powerFactor = (skill.power || 100) / 100.0;
+    const base = (actor.def.atk * powerFactor) - (tgt.def.def * 0.35);
+    const rand = 0.85 + Math.random() * 0.3;
+    let dmg = Math.max(15, Math.round(base * rand));
+    const isCrit = Math.random() < 0.18;
+    if (isCrit) dmg = Math.round(dmg * 1.85);
+
+    tgt.current_hp = Math.max(0, tgt.current_hp - dmg);
+    const isDead = tgt.current_hp === 0;
+    if (isDead) tgt.is_alive = false;
+
+    events.push({
+      type: "damage_hit",
+      actor_id: actor.def.id,
+      target_id: tgt.def.id,
+      damage: dmg,
+      is_critical: isCrit,
+      is_miss: false,
+      remaining_hp: tgt.current_hp,
+      max_hp: tgt.def.max_hp,
+      quote: isDead ? tgt.def.dead_quote : tgt.def.hurt_quote
+    });
+
+    if (isDead) {
+      events.push({
+        type: "fighter_down",
+        target_id: tgt.def.id,
+        target_name: tgt.def.name,
+        quote: tgt.def.dead_quote
+      });
+    }
+  }
+
+  checkOver(events = []) {
+    const alive = this.fighters.filter(f => f.is_alive);
+    if (alive.length === 1) {
+      events.push({
+        type: "battle_over",
+        winner_id: alive[0].def.id,
+        winner_name: alive[0].def.name,
+        quote: alive[0].def.win_quote,
+        is_draw: false
+      });
+    } else if (alive.length === 0) {
+      events.push({
+        type: "battle_over",
+        winner_id: null,
+        winner_name: null,
+        quote: "全員相討ち！",
+        is_draw: true
+      });
+    }
+  }
+
+  resetBattle() {
+    this.fighters.forEach(f => {
+      f.current_hp = f.def.max_hp;
+      f.is_alive = true;
+    });
+    this.turnCount = 0;
+    this.isPaused = false;
+    window.gminiOverlay.onEvent("battle_init", { fighters: this.fighters, mode: "battle_royale" });
+  }
+
+  addReinforcement(character) {
+    const state = {
+      def: character,
+      current_hp: character.max_hp,
+      team_id: this.fighters.length,
+      is_alive: true,
+      gauge: 100
+    };
+    this.fighters.push(state);
+    window.gminiOverlay.onEvent("reinforcement_added", {
+      fighters: this.fighters,
+      events: [{
+        type: "reinforcement_join",
+        fighter: state,
+        quote: character.intro_quote
+      }]
+    });
+  }
+}
+
+window.fallbackSim = new FallbackBattleSimulator();
+
+/* ==========================================================================
+   4. CLIENT-SIDE APP STATE & CONTROLLER
+   ========================================================================== */
+class ChaosBattleApp {
+  constructor() {
+    this.allCharacters = [];
+    this.activeFighters = [];
+    this.selectedIds = new Set();
+    this.isPaused = false;
+    this.speedIndex = 0;
+    this.speeds = ["normal", "fast", "hyper", "skip"];
+    this.speedLabels = ["1x", "2x", "4x", "SKIP"];
+    this.currentUploadedDataUrl = "";
+
+    this.initStorage();
+    this.setupSpeedlines();
+    this.bindDomEvents();
+    this.renderRoster();
+    this.startInitialBattle();
+  }
+
+  initStorage() {
+    try {
+      const saved = localStorage.getItem("chaos_battle_custom_chars");
+      const custom = saved ? JSON.parse(saved) : [];
+      this.allCharacters = [...PRESET_CHARACTERS, ...custom];
+    } catch (e) {
+      console.warn("Storage load failed:", e);
+      this.allCharacters = [...PRESET_CHARACTERS];
+    }
+
+    // デフォルトで最初の6名を選択
+    this.selectedIds = new Set(this.allCharacters.slice(0, 6).map(c => c.id));
+  }
+
+  saveCustomCharacters() {
+    const custom = this.allCharacters.filter(c => c.is_custom);
+    try {
+      localStorage.setItem("chaos_battle_custom_chars", JSON.stringify(custom));
+    } catch (e) {
+      console.error("Storage save failed:", e);
+    }
+  }
+
+  startInitialBattle() {
+    const chosen = this.allCharacters.filter(c => this.selectedIds.has(c.id));
+    window.gminiOverlay.sendAction("start_battle", {
+      fighters: chosen,
+      mode: "battle_royale"
+    });
+  }
+
+  setupSpeedlines() {
+    const canvas = document.getElementById("speedlines-canvas");
+    const ctx = canvas.getContext("2d");
+    const resize = () => {
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+    };
+    window.addEventListener("resize", resize);
+    resize();
+
+    let angle = 0;
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const overlay = document.getElementById("cutin-overlay");
+      if (overlay.style.display === "flex") {
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+        ctx.lineWidth = 3;
+        for (let i = 0; i < 36; i++) {
+          const a = (i * 10 + angle) * Math.PI / 180;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(a) * 80, Math.sin(a) * 80);
+          ctx.lineTo(Math.cos(a) * 800, Math.sin(a) * 800);
+          ctx.stroke();
+        }
+        ctx.restore();
+        angle += 2;
+      }
+      requestAnimationFrame(draw);
+    };
+    draw();
+  }
+
+  bindDomEvents() {
+    // Play/Pause
+    const btnPlayPause = document.getElementById("btn-play-pause");
+    btnPlayPause.onclick = () => {
+      window.gminiOverlay.sendAction("toggle_pause", {});
+    };
+
+    // Step turn
+    document.getElementById("btn-step").onclick = () => {
+      audio.init();
+      window.gminiOverlay.sendAction("step_turn", {});
+    };
+
+    // Speed toggle
+    const btnSpeed = document.getElementById("btn-speed");
+    btnSpeed.onclick = () => {
+      this.speedIndex = (this.speedIndex + 1) % this.speeds.length;
+      btnSpeed.textContent = `⚡ 速度: ${this.speedLabels[this.speedIndex]}`;
+      window.gminiOverlay.sendAction("set_speed", { speed: this.speeds[this.speedIndex] });
+    };
+
+    // Restart
+    document.getElementById("btn-restart").onclick = () => {
+      window.gminiOverlay.sendAction("reset_battle", {});
+      document.getElementById("victory-overlay").style.display = "none";
+    };
+
+    // Reinforcement
+    document.getElementById("btn-reinforce").onclick = () => {
+      audio.playSiren();
+      this.callReinforcement();
+    };
+
+    // Modal open/close
+    const modal = document.getElementById("char-modal");
+    document.getElementById("btn-manage-chars").onclick = () => {
+      modal.style.display = "flex";
+      this.renderRoster();
+    };
+    document.getElementById("btn-close-modal").onclick = () => {
+      modal.style.display = "none";
+    };
+    document.getElementById("btn-modal-cancel").onclick = () => {
+      modal.style.display = "none";
+    };
+
+    // Image Upload (File input & Drag & Drop)
+    const fileInput = document.getElementById("file-input");
+    const dropZone = document.getElementById("drop-zone");
+    const previewImg = document.getElementById("upload-preview");
+    previewImg.src = makeDefaultSvgAvatar("新キャラ", "#00e5ff", "⭐");
+
+    document.getElementById("btn-select-file").onclick = () => fileInput.click();
+    dropZone.onclick = (e) => {
+      if (e.target !== fileInput && e.target.id !== "btn-select-file") fileInput.click();
+    };
+
+    dropZone.ondragover = (e) => {
+      e.preventDefault();
+      dropZone.classList.add("dragover");
+    };
+    dropZone.ondragleave = () => dropZone.classList.remove("dragover");
+    dropZone.ondrop = (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("dragover");
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        this.handleFileUpload(e.dataTransfer.files[0]);
+      }
+    };
+    fileInput.onchange = () => {
+      if (fileInput.files && fileInput.files[0]) {
+        this.handleFileUpload(fileInput.files[0]);
+      }
+    };
+
+    // Save custom character
+    document.getElementById("btn-save-custom-char").onclick = () => {
+      this.saveCustomFromForm();
+    };
+
+    // Apply roster & start battle
+    document.getElementById("btn-apply-roster").onclick = () => {
+      modal.style.display = "none";
+      const chosen = this.allCharacters.filter(c => this.selectedIds.has(c.id));
+      if (chosen.length < 2) {
+        alert("最低2名のキャラクターを選択してください！");
+        return;
+      }
+      window.gminiOverlay.sendAction("start_battle", {
+        fighters: chosen,
+        mode: "battle_royale"
+      });
+      document.getElementById("victory-overlay").style.display = "none";
+    };
+
+    // Victory screen buttons
+    document.getElementById("btn-victory-restart").onclick = () => {
+      document.getElementById("victory-overlay").style.display = "none";
+      window.gminiOverlay.sendAction("reset_battle", {});
+    };
+    document.getElementById("btn-victory-close").onclick = () => {
+      document.getElementById("victory-overlay").style.display = "none";
+    };
+
+    // Keyboard shortcuts
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        window.gminiOverlay.sendAction("toggle_pause", {});
+      }
+    });
+
+    // Rust event callback
+    window.onRustEvent = (event, data) => this.handleRustEvent(event, data);
+  }
+
+  handleFileUpload(file) {
+    if (!file.type.startsWith("image/")) {
+      alert("画像ファイル（PNG, JPG, WebP, GIF）を選択してください。");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.currentUploadedDataUrl = e.target.result;
+      document.getElementById("upload-preview").src = this.currentUploadedDataUrl;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  saveCustomFromForm() {
+    const name = document.getElementById("input-char-name").value.trim() || "カスタム戦士";
+    const color = document.getElementById("input-char-color").value.trim() || "#00e5ff";
+    const hp = parseInt(document.getElementById("input-char-hp").value, 10) || 1200;
+    const atk = parseInt(document.getElementById("input-char-atk").value, 10) || 250;
+    const spd = parseInt(document.getElementById("input-char-spd").value, 10) || 120;
+    const skillName = document.getElementById("input-skill-name").value.trim() || "アルティメット技";
+    const skillTarget = document.getElementById("select-skill-target").value;
+    const skillQuote = document.getElementById("input-skill-quote").value.trim() || "喰らえええええ！";
+    const deadQuote = document.getElementById("input-dead-quote").value.trim() || "チーン…";
+    const atkQuote = document.getElementById("input-atk-quote").value.trim() || "いくぞ！";
+    const winQuote = document.getElementById("input-win-quote").value.trim() || "完全勝利！";
+
+    const imgUrl = this.currentUploadedDataUrl || makeDefaultSvgAvatar(name, color, "★");
+
+    const newChar = {
+      id: "custom_" + Date.now(),
+      name,
+      image_url: imgUrl,
+      max_hp: hp,
+      atk,
+      def: 120,
+      spd,
+      color,
+      intro_quote: "新たな戦士が乱入してきた！",
+      attack_quote: atkQuote,
+      hurt_quote: "ぐあああっ！",
+      dead_quote: deadQuote,
+      win_quote: winQuote,
+      skill: {
+        name: skillName,
+        quote: skillQuote,
+        target: skillTarget,
+        power: 280,
+        hit_rate: 90
+      },
+      is_custom: true
+    };
+
+    this.allCharacters.push(newChar);
+    this.selectedIds.add(newChar.id);
+    this.saveCustomCharacters();
+    this.renderRoster();
+    alert(`「${name}」を登録しました！`);
+  }
+
+  renderRoster() {
+    const list = document.getElementById("roster-list");
+    list.innerHTML = "";
+
+    this.allCharacters.forEach(c => {
+      const chip = document.createElement("div");
+      chip.className = "roster-chip" + (this.selectedIds.has(c.id) ? " selected" : "");
+      chip.innerHTML = `
+        <img src="${c.image_url}" alt="${c.name}"/>
+        <span>${c.name} ${c.is_custom ? "⭐" : ""}</span>
+      `;
+      chip.onclick = () => {
+        if (this.selectedIds.has(c.id)) {
+          this.selectedIds.delete(c.id);
+          chip.classList.remove("selected");
+        } else {
+          this.selectedIds.add(c.id);
+          chip.classList.add("selected");
+        }
+      };
+      list.appendChild(chip);
+    });
+  }
+
+  callReinforcement() {
+    // 参加していないキャラからランダムに1人選んで乱入
+    const unjoined = this.allCharacters.filter(c => !this.activeFighters.some(f => f.def.id === c.id));
+    const pick = unjoined.length > 0
+      ? unjoined[Math.floor(Math.random() * unjoined.length)]
+      : this.allCharacters[Math.floor(Math.random() * this.allCharacters.length)];
+
+    this.showLog(`🚨【緊急乱入！】${pick.name} が戦場に飛び込んできた！！「${pick.intro_quote}」`, true);
+    window.gminiOverlay.sendAction("add_reinforcement", { character: pick });
+  }
+
+  handleRustEvent(event, data) {
+    switch (event) {
+      case "battle_init":
+        this.onBattleInit(data.fighters);
+        break;
+      case "battle_step":
+        this.onBattleStep(data);
+        break;
+      case "pause_changed":
+        this.isPaused = data.is_paused;
+        document.getElementById("btn-play-pause").textContent = this.isPaused ? "▶️ 再生" : "⏸️ 一時停止";
+        break;
+      case "reinforcement_added":
+        this.onReinforcementAdded(data);
+        break;
+    }
+  }
+
+  onBattleInit(fighters) {
+    this.activeFighters = fighters;
+    document.getElementById("fighters-count-badge").textContent = `${fighters.length}名参戦`;
+    this.renderFightersGrid();
+    this.showLog("🔥 バトル開始！各戦士が行動準備に入った！", true);
+  }
+
+  renderFightersGrid() {
+    const grid = document.getElementById("fighters-grid");
+    grid.innerHTML = "";
+
+    this.activeFighters.forEach(f => {
+      const card = document.createElement("div");
+      card.id = `card-${f.def.id}`;
+      card.className = "fighter-card interactive" + (!f.is_alive ? " dead" : "");
+      card.style.setProperty("--char-color", f.def.color);
+
+      card.innerHTML = `
+        <div class="fighter-bubble" id="bubble-${f.def.id}"></div>
+        <div class="avatar-wrapper">
+          <img class="avatar-img" src="${f.def.image_url}" alt="${f.def.name}" />
+          <div class="dead-stamp">💀 脱落</div>
+        </div>
+        <div class="fighter-name">${f.def.name}</div>
+        <div class="hp-container">
+          <div class="hp-numbers">
+            <span>HP</span>
+            <span id="hp-text-${f.def.id}">${f.current_hp} / ${f.def.max_hp}</span>
+          </div>
+          <div class="hp-bar-bg">
+            <div class="hp-bar-delay" id="hp-delay-${f.def.id}" style="width: ${(f.current_hp / f.def.max_hp) * 100}%"></div>
+            <div class="hp-bar-fill" id="hp-fill-${f.def.id}" style="width: ${(f.current_hp / f.def.max_hp) * 100}%"></div>
+          </div>
+        </div>
+      `;
+
+      grid.appendChild(card);
+    });
+  }
+
+  onBattleStep(data) {
+    const { events, turn, is_finished, winner_id } = data;
+    if (!events || events.length === 0) return;
+
+    // Reset card highlight
+    document.querySelectorAll(".fighter-card").forEach(c => c.classList.remove("active-turn"));
+
+    events.forEach(ev => {
+      switch (ev.type) {
+        case "turn_start": {
+          const card = document.getElementById(`card-${ev.actor_id}`);
+          if (card) card.classList.add("active-turn");
+          break;
+        }
+        case "attack_cutin": {
+          this.triggerCutin(ev);
+          audio.playCutin();
+          break;
+        }
+        case "damage_hit": {
+          this.triggerDamageHit(ev);
+          break;
+        }
+        case "heal_hit": {
+          this.triggerHeal(ev);
+          break;
+        }
+        case "fighter_down": {
+          this.triggerFighterDown(ev);
+          break;
+        }
+        case "chaos_shuffle": {
+          this.showLog(`🌀 ${ev.message}`, true);
+          audio.playLaser();
+          break;
+        }
+        case "battle_over": {
+          this.triggerBattleOver(ev);
+          break;
+        }
+      }
+    });
+  }
+
+  triggerCutin(ev) {
+    const overlay = document.getElementById("cutin-overlay");
+    const bg = document.getElementById("cutin-bg");
+    const avatar = document.getElementById("cutin-avatar");
+    const actorName = document.getElementById("cutin-actor-name");
+    const quote = document.getElementById("cutin-quote");
+    const skillName = document.getElementById("cutin-skill-name");
+
+    const actor = this.activeFighters.find(f => f.def.id === ev.actor_id);
+    avatar.src = actor ? actor.def.image_url : "";
+    actorName.textContent = ev.actor_name;
+    quote.textContent = `「${ev.quote}」`;
+    skillName.textContent = `技名: ${ev.skill_name}`;
+
+    overlay.style.display = "flex";
+    bg.style.opacity = "1";
+
+    this.showBubble(ev.actor_id, ev.quote, 1400);
+    this.showLog(`⚡ ${ev.actor_name} の「${ev.skill_name}」！「${ev.quote}」`, true);
+
+    const hideDelay = this.speedIndex >= 2 ? 300 : 700;
+    setTimeout(() => {
+      overlay.style.display = "none";
+      bg.style.opacity = "0";
+    }, hideDelay);
+  }
+
+  triggerDamageHit(ev) {
+    const card = document.getElementById(`card-${ev.target_id}`);
+    if (card) {
+      card.classList.add("hurt");
+      setTimeout(() => card.classList.remove("hurt"), 300);
+    }
+
+    // HP Bar Update
+    const fill = document.getElementById(`hp-fill-${ev.target_id}`);
+    const delay = document.getElementById(`hp-delay-${ev.target_id}`);
+    const text = document.getElementById(`hp-text-${ev.target_id}`);
+
+    const pct = Math.max(0, Math.min(100, (ev.remaining_hp / ev.max_hp) * 100));
+    if (fill) fill.style.width = pct + "%";
+    if (delay) delay.style.width = pct + "%";
+    if (text) text.textContent = `${ev.remaining_hp} / ${ev.max_hp}`;
+
+    // Sound & FX
+    if (ev.is_critical) {
+      audio.playExplosion();
+      this.triggerFlash();
+      this.showLog(`💥 CRITICAL!! ${ev.target_id} に ${ev.damage} の特大ダメージ！`, true);
+    } else if (ev.is_miss) {
+      audio.playPunch();
+      this.showLog(`💨 ${ev.target_id} は攻撃を華麗に回避した！`);
+    } else {
+      audio.playPunch();
+      this.showLog(`⚔️ ${ev.damage} ダメージ！ (残りHP: ${ev.remaining_hp})`);
+    }
+
+    if (ev.quote) {
+      this.showBubble(ev.target_id, ev.quote, 1200);
+    }
+  }
+
+  triggerHeal(ev) {
+    const fill = document.getElementById(`hp-fill-${ev.actor_id}`);
+    const delay = document.getElementById(`hp-delay-${ev.actor_id}`);
+    const text = document.getElementById(`hp-text-${ev.actor_id}`);
+    const pct = (ev.current_hp / ev.max_hp) * 100;
+
+    if (fill) fill.style.width = pct + "%";
+    if (delay) delay.style.width = pct + "%";
+    if (text) text.textContent = `${ev.current_hp} / ${ev.max_hp}`;
+
+    this.showLog(`💖 ${ev.actor_id} は ${ev.heal} HP回復した！ (現在HP: ${ev.current_hp})`);
+  }
+
+  triggerFighterDown(ev) {
+    audio.playBell();
+    const card = document.getElementById(`card-${ev.target_id}`);
+    if (card) {
+      card.classList.add("dead");
+      card.classList.remove("active-turn");
+    }
+    this.triggerFlash();
+    this.showBubble(ev.target_id, ev.quote, 1800);
+    this.showLog(`💀【脱落】${ev.target_name} 撃破！「${ev.quote}」`, true);
+  }
+
+  triggerBattleOver(ev) {
+    audio.playFanfare();
+    const overlay = document.getElementById("victory-overlay");
+    const avatar = document.getElementById("victory-avatar");
+    const name = document.getElementById("victory-name");
+    const quote = document.getElementById("victory-quote");
+
+    if (ev.is_draw) {
+      name.textContent = "引き分け！";
+      quote.textContent = "全員相討ちにより勝者なし！";
+      avatar.src = makeDefaultSvgAvatar("無", "#666", "⚖️");
+    } else {
+      name.textContent = ev.winner_name || "勝者";
+      quote.textContent = ev.quote ? `「${ev.quote}」` : "完全勝利！";
+      const winner = this.activeFighters.find(f => f.def.id === ev.winner_id);
+      avatar.src = winner ? winner.def.image_url : "";
+    }
+
+    overlay.style.display = "flex";
+  }
+
+  onReinforcementAdded(data) {
+    this.activeFighters = data.fighters;
+    document.getElementById("fighters-count-badge").textContent = `${this.activeFighters.length}名参戦`;
+    this.renderFightersGrid();
+  }
+
+  showBubble(charId, text, durationMs = 1200) {
+    const bubble = document.getElementById(`bubble-${charId}`);
+    if (!bubble) return;
+    bubble.textContent = text;
+    bubble.classList.add("show");
+    setTimeout(() => bubble.classList.remove("show"), durationMs);
+  }
+
+  showLog(text, highlight = false) {
+    const el = document.getElementById("latest-log");
+    el.textContent = text;
+    if (highlight) {
+      el.classList.add("hl");
+    } else {
+      el.classList.remove("hl");
+    }
+  }
+
+  triggerFlash() {
+    const flash = document.getElementById("screen-flash");
+    flash.style.opacity = "0.7";
+    setTimeout(() => { flash.style.opacity = "0"; }, 100);
+  }
+}
+
+// Boot application
+window.addEventListener("DOMContentLoaded", () => {
+  window.chaosApp = new ChaosBattleApp();
+
+  // Load Rust WASM module
+  import("./pkg/chaos_battle_lib.js").then(async (mod) => {
+    try {
+      await mod.default("./pkg/chaos_battle_lib_bg.wasm");
+      console.log("Gmini Rust/WASM Engine successfully mounted!");
+    } catch (e) {
+      console.warn("WASM init warning (hybrid mode active):", e);
+    }
+  }).catch((e) => {
+    console.info("Running in pure Web Hybrid mode:", e);
+  });
+});
+</script>
+
+</body>
+</html>
