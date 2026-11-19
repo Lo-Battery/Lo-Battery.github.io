@@ -1,5 +1,22 @@
 [
   {
+    "id": "waribashi",
+    "title": "極割 -KIWAMI WARIBASHI-",
+    "subtitle": "スマートフォン専用！2本指で挑むアスペン元禄箸の極限リアル対称割りシミュレーター",
+    "engine": "Gmini 2D Engine (Rust + WebGPU / WebGL2)",
+    "url": "./games/waribashi/index.html",
+    "thumbnail": "./assets/waribashi.png",
+    "controls": "📱 スマホ: 2本指（親指）で左右に開く / 💻 PC: マウスドラッグ＋A・Dキー微調整",
+    "platform_note": "📱 スマホ対応（縦画面専用・マルチタッチ・触覚バイブレーション・Web Audio対応）",
+    "tags": [
+      "シミュレーション",
+      "物理演算",
+      "カジュアル",
+      "縦画面",
+      "Gmini"
+    ]
+  },
+  {
     "id": "chaos-battle",
     "title": "カオスバトル・シミュレーター",
     "subtitle": "画像アップロード対応！Scratch風6×6グリッドで繰り広げるカオスバトル再現シミュレーター",
