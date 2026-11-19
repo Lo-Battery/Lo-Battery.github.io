@@ -178,9 +178,8 @@
   <div id="app-container">
     <div id="top-bar">
       <div class="mode-chips">
-        <button class="chip-btn active" id="btn-mode-classic">一膳勝負</button>
-        <button class="chip-btn" id="btn-mode-rush">十膳連続</button>
-        <button class="chip-btn" id="btn-mode-curved">魔の木目</button>
+        <button class="chip-btn active" id="btn-mode-normal">ノーマル</button>
+        <button class="chip-btn" id="btn-mode-real">リアル</button>
       </div>
       <button class="action-btn" id="btn-restart">もう一膳</button>
     </div>
@@ -200,8 +199,8 @@
   </div>
 
   <script type="module">
-    const APP_VERSION = "20261119_v3";
-    import init from "./pkg/waribashi_lib.js?v=20261119_v3";
+    const APP_VERSION = "20261119_v4";
+    import init from "./pkg/waribashi_lib.js?v=20261119_v4";
 
     // Web Overlay グローバルブリッジ
     window.gminiOverlay = {
@@ -242,14 +241,11 @@
       window.gminiOverlay.sendAction("restart");
     });
 
-    attachButton("btn-mode-classic", () => {
-      setMode("classic");
+    attachButton("btn-mode-normal", () => {
+      setMode("normal");
     });
-    attachButton("btn-mode-rush", () => {
-      setMode("rush");
-    });
-    attachButton("btn-mode-curved", () => {
-      setMode("curved");
+    attachButton("btn-mode-real", () => {
+      setMode("real");
     });
 
     function setMode(mode) {
