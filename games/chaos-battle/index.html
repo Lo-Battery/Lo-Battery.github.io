@@ -97,17 +97,23 @@
     }
 
     /* ======================================================================
-       6x6 GRID ARENA (Exact Scratch Chaos Battle Layout)
+       ARENA WRAPPER & 6x6 GRID ARENA (Exact Scratch Chaos Battle Layout)
        ====================================================================== */
-    #grid-arena {
+    #arena-wrapper {
+      position: relative;
       flex: 1;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    #grid-arena {
       width: 100%;
       height: 100%;
       display: grid;
       grid-template-columns: repeat(6, 1fr);
       grid-template-rows: repeat(6, 1fr);
       background: #fff;
-      position: relative;
     }
 
     .grid-cell {
@@ -127,12 +133,21 @@
       background: #ffff44 !important;
       animation: cellBlink 0.12s infinite alternate;
     }
+    .grid-cell.highlight-special {
+      background: #ffea00 !important;
+      box-shadow: inset 0 0 16px #ff0000;
+      animation: specialPulse 0.08s infinite alternate;
+    }
     .grid-cell.highlight-target {
       background: #ff8888 !important;
     }
     @keyframes cellBlink {
       from { filter: brightness(1); }
       to { filter: brightness(1.35); }
+    }
+    @keyframes specialPulse {
+      from { filter: brightness(1) drop-shadow(0 0 4px #ff0000); }
+      to { filter: brightness(1.4) drop-shadow(0 0 12px #ffaa00); }
     }
 
     .cell-img {
@@ -317,21 +332,26 @@
   <!-- Subtitle Bar -->
   <div id="subtitle-bar">カオスバトル開幕！！クリックして画像キャラも追加できるぞ！</div>
 
-  <!-- 6x6 Grid Arena -->
-  <div id="grid-arena"></div>
+  <!-- Arena Wrapper: keeps grid and overlays 100% aligned -->
+  <div id="arena-wrapper">
+    <!-- 6x6 Grid Arena -->
+    <div id="grid-arena"></div>
 
-  <!-- SVG for Big Fat Red Arrow (Exact scratch style!) -->
-  <svg id="arrow-overlay">
-    <defs>
-      <marker id="arrowhead" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto">
-        <polygon points="0 0, 7 3, 0 6" fill="#ff0000" stroke="#b30000" stroke-width="0.3" />
-      </marker>
-    </defs>
-    <line id="red-arrow" x1="0" y1="0" x2="0" y2="0" stroke="#ff0000" stroke-width="20" stroke-linecap="butt" marker-end="url(#arrowhead)" style="display:none;" />
-  </svg>
+    <!-- SVG for Big Fat Red Arrow (Exact scratch style!) -->
+    <svg id="arrow-overlay">
+      <defs>
+        <marker id="arrowhead" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto">
+          <polygon points="0 0, 7 3, 0 6" fill="#ff0000" stroke="#b30000" stroke-width="0.3" />
+        </marker>
+        <marker id="arrowhead-special" markerWidth="9" markerHeight="7" refX="7.5" refY="3.5" orient="auto">
+          <polygon points="0 0, 9 3.5, 0 7" fill="#ff0022" stroke="#ffff00" stroke-width="0.7" />
+        </marker>
+      </defs>
+    </svg>
 
-  <!-- Effects Overlay -->
-  <div id="effect-overlay"></div>
+    <!-- Effects Overlay -->
+    <div id="effect-overlay"></div>
+  </div>
 
   <!-- Winner Banner -->
   <div id="winner-banner">
@@ -347,8 +367,18 @@
       <input type="file" id="file-selector" accept="image/*" />
       <input type="text" id="custom-name" placeholder="キャラ名（例: 俺、友達、ミーム）" />
       <input type="number" id="custom-hp" placeholder="HP (例: 100)" value="100" />
-      <input type="text" id="custom-skill" placeholder="必殺技名" value="スーパーメガ粒子砲" />
-      <input type="text" id="custom-quote" placeholder="セリフ" value="喰らえええええ！" />
+      <input type="text" id="custom-skill" placeholder="通常技名（例: パンチ、体当たり）" value="パンチ" />
+      <input type="text" id="custom-quote" placeholder="通常セリフ（例: いくぞ！）" value="いくぞ！" />
+      <div style="border-top:1px dashed #ccc; margin:4px 0; padding-top:4px;">
+        <span style="font-size:0.8rem; font-weight:900; color:#ff0033;">💥 本家風 必殺技設定:</span>
+        <input type="text" id="custom-special" placeholder="必殺技名（例: アルティメット砲）" value="アルティメット砲" style="margin-top:4px;" />
+        <input type="text" id="custom-special-quote" placeholder="必殺技セリフ（例: 喰らえええええ！）" value="喰らえええええ！" />
+        <select id="custom-special-type" style="width:100%; padding:6px; font-weight:bold; border:2px solid #000; border-radius:4px; font-family:inherit; margin-top:4px;">
+          <option value="all">💥 全体攻撃（2〜4体同時攻撃）</option>
+          <option value="kill">⚡ 一撃必殺（単体超絶ダメージ）</option>
+          <option value="bomb">💣 自爆道連れ（標的と共に大爆発）</option>
+        </select>
+      </div>
       <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
         <button id="btn-cancel-modal">キャンセル</button>
         <button class="btn-green" id="btn-save-modal">追加する！</button>
@@ -406,6 +436,41 @@ class ScratchAudio {
     src.connect(f); f.connect(g); g.connect(this.ctx.destination);
     src.start(t);
   }
+  playSpecialCharge() {
+    this.init();
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(180, t);
+    osc.frequency.exponentialRampToValueAtTime(800, t + 0.18);
+    g.gain.setValueAtTime(0.01, t);
+    g.gain.linearRampToValueAtTime(0.5, t + 0.15);
+    g.gain.exponentialRampToValueAtTime(0.01, t + 0.22);
+    osc.connect(g); g.connect(this.ctx.destination);
+    osc.start(t); osc.stop(t + 0.23);
+  }
+  playMegaBlast() {
+    this.init();
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const bufSize = Math.floor(this.ctx.sampleRate * 0.5);
+    const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.2));
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    const f = this.ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.setValueAtTime(800, t);
+    f.frequency.linearRampToValueAtTime(40, t + 0.5);
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(1.0, t);
+    g.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+    src.connect(f); f.connect(g); g.connect(this.ctx.destination);
+    src.start(t);
+  }
   playBell() {
     this.init();
     if (!this.ctx) return;
@@ -452,34 +517,34 @@ function makeIconSvg(text, bgCol, char) {
 }
 
 const DEFAULT_ROSTER = [
-  { name: "ドナルド", char: "🤡", col: "#ff2222", hp: 100, skill: "ランランルー☆", quote: "嬉しくなると殺っちゃうんだ☆" },
-  { name: "ブロリー", char: "💪", col: "#22cc22", hp: 130, skill: "デストラクション", quote: "手加減など知らん！" },
-  { name: "野獣先輩", char: "🍺", col: "#cc8833", hp: 110, skill: "アイスティー砲", quote: "いいよ！こいよ！" },
-  { name: "ドラえもん", char: "🔔", col: "#0099ff", hp: 100, skill: "地球破壊爆弾", quote: "ぼくドラえもんです！" },
-  { name: "アンパンマン", char: "🍞", col: "#ff6600", hp: 100, skill: "アンパンチ", quote: "顔が濡れて力が出ない〜" },
-  { name: "デデデ大王", char: "🔨", col: "#ffaa00", hp: 120, skill: "メガハンマー", quote: "わしの勝ちぞい！" },
-  { name: "松岡修造", char: "🔥", col: "#ff4400", hp: 100, skill: "熱くなれよ！！", quote: "諦めんなよぉぉ！！" },
-  { name: "ひろゆき", char: "🗣️", col: "#cccc00", hp: 90, skill: "それって感想ですよね", quote: "なんかデータあるんですか？" },
-  { name: "マリオ", char: "🍄", col: "#dd0000", hp: 100, skill: "ファイアボール", quote: "マンマミーア！" },
-  { name: "ルイージ", char: "⚡", col: "#00bb00", hp: 95, skill: "オバキューム", quote: "ルイージマンションへようこそ" },
-  { name: "クリーパー", char: "💣", col: "#33aa33", hp: 80, skill: "大爆発自爆", quote: "シューーーッ（爆発）" },
-  { name: "マスオさん", char: "👓", col: "#6699ff", hp: 90, skill: "ええぇぇぇー！", quote: "ええぇぇぇー！！" },
-  { name: "魔理沙", char: "🧙‍♀️", col: "#ffdd00", hp: 95, skill: "マスタースパーク", quote: "弾幕はパワーだぜ！" },
-  { name: "霊夢", char: "⛩️", col: "#ff3333", hp: 100, skill: "夢想封印", quote: "お賽銭ちょうだい！" },
-  { name: "宇宙猫", char: "🐱", col: "#9966ff", hp: 100, skill: "時空崩壊", quote: "ニャーーーーーン！" },
-  { name: "ニコちゃん", char: "🙂", col: "#ffcc00", hp: 100, skill: "虚無スマイル", quote: "・・・・・・。" },
-  { name: "総帥", char: "🤖", col: "#00e5ff", hp: 120, skill: "オメガレーザー", quote: "消滅せよ！" },
-  { name: "カツオ", char: "⚾", col: "#ee7700", hp: 85, skill: "姉さん怒りの鉄拳", quote: "磯野〜野球行こうぜ！" },
-  { name: "波平", char: "💢", col: "#555555", hp: 100, skill: "ばっかもーん！", quote: "ばっかもーーーーん！！" },
-  { name: "タラちゃん", char: "🍼", col: "#ff99cc", hp: 80, skill: "デスステップ", quote: "ですしいー！" },
-  { name: "初音ミク", char: "🎵", col: "#33cccc", hp: 95, skill: "みくみくビーム", quote: "みくみくにしてあげる♪" },
-  { name: "孫悟空", char: "🥋", col: "#ff6600", hp: 120, skill: "かめはめ波", quote: "オラわくわくすっぞ！" },
-  { name: "ベジータ", char: "👑", col: "#0033cc", hp: 110, skill: "ファイナルフラッシュ", quote: "ビッグバンアタック！" },
-  { name: "ピカチュウ", char: "⚡", col: "#ffee00", hp: 90, skill: "10まんボルト", quote: "ピッカチュウウウ！" },
-  { name: "カービィ", char: "⭐", col: "#ff99aa", hp: 110, skill: "すいこみ", quote: "ぽよ☆" },
-  { name: "シャチハタ", char: "🔴", col: "#cc0000", hp: 90, skill: "即時承認印鑑", quote: "ポン！（承認）" },
-  { name: "猫キャット", char: "🐈", col: "#ff8800", hp: 90, skill: "ネコパンチ", quote: "Scratchへようこそ！" },
-  { name: "HIKAKIN", char: "😎", col: "#3399ff", hp: 110, skill: "ブンブンハロー", quote: "ブンブンハローYouTube！" }
+  { name: "ドナルド", char: "🤡", col: "#ff2222", hp: 100, skill: "パンチ", quote: "嬉しくなると殺っちゃうんだ☆", specialName: "アルティメット・ランランルー☆", specialType: "all", specialQuote: "ランランルー！みんなで死んじゃえ☆" },
+  { name: "ブロリー", char: "💪", col: "#22cc22", hp: 130, skill: "タックル", quote: "手加減など知らん！", specialName: "オメガブラスター", specialType: "kill", specialQuote: "消し去ってやる！波ぁぁっ！" },
+  { name: "野獣先輩", char: "🍺", col: "#cc8833", hp: 110, skill: "アイスティー攻撃", quote: "いいよ！こいよ！", specialName: "王道征く咆哮", specialType: "all", specialQuote: "逝きスギィィィ！イキ杉ィ！" },
+  { name: "ドラえもん", char: "🔔", col: "#0099ff", hp: 100, skill: "空気砲", quote: "ぼくドラえもんです！", specialName: "地球破壊爆弾", specialType: "kill", specialQuote: "地球なんて滅びちゃえー！" },
+  { name: "アンパンマン", char: "🍞", col: "#ff6600", hp: 100, skill: "アンキック", quote: "元気百倍！", specialName: "元気百倍フルパワーアンパンチ", specialType: "kill", specialQuote: "僕の顔をお食べ！…喰らえ！" },
+  { name: "デデデ大王", char: "🔨", col: "#ffaa00", hp: 120, skill: "ハンマー殴打", quote: "わしの勝ちぞい！", specialName: "メガトン・ニューデデデハンマー", specialType: "all", specialQuote: "全員吹き飛ぶがよいぞい！" },
+  { name: "松岡修造", char: "🔥", col: "#ff4400", hp: 100, skill: "熱血スマッシュ", quote: "諦めんなよ！！", specialName: "パッション太陽フレア", specialType: "all", specialQuote: "もっと熱くなれよぉぉぉ！！" },
+  { name: "ひろゆき", char: "🗣️", col: "#cccc00", hp: 90, skill: "論破パンチ", quote: "なんかデータあるんですか？", specialName: "それってあなたの感想ですよね", specialType: "kill", specialQuote: "嘘つくのやめてもらっていいですか？" },
+  { name: "マリオ", char: "🍄", col: "#dd0000", hp: 100, skill: "ファイアボール", quote: "マンマミーア！", specialName: "スーパースター無敵アタック", specialType: "kill", specialQuote: "ヤッフーーー！無敵だぜ！" },
+  { name: "ルイージ", char: "⚡", col: "#00bb00", hp: 95, skill: "オバキューム吸引", quote: "ボクの番だね！", specialName: "ネガティブ・ゾーン", specialType: "all", specialQuote: "みんな一緒にオバケになろう…" },
+  { name: "クリーパー", char: "💣", col: "#33aa33", hp: 80, skill: "体当たり", quote: "シューーーッ…", specialName: "超メガトン自爆ボム", specialType: "bomb", specialQuote: "ドカーーーーーーン！！" },
+  { name: "マスオさん", char: "👓", col: "#6699ff", hp: 90, skill: "びんた", quote: "ええぇぇぇー！", specialName: "絶叫メガトンウェーブ", specialType: "kill", specialQuote: "ええぇぇぇーーーーーーっ！！" },
+  { name: "魔理沙", char: "🧙‍♀️", col: "#ffdd00", hp: 95, skill: "スターダスト", quote: "弾幕はパワーだぜ！", specialName: "極大マスタースパーク", specialType: "all", specialQuote: "根こそぎ薙ぎ払え！マスパァァ！" },
+  { name: "霊夢", char: "⛩️", col: "#ff3333", hp: 100, skill: "お札ショット", quote: "お賽銭ちょうだい！", specialName: "夢想天生", specialType: "kill", specialQuote: "存在ごと消し去ってあげるわ！" },
+  { name: "宇宙猫", char: "🐱", col: "#9966ff", hp: 100, skill: "肉球パンチ", quote: "ニャーーーーーン！", specialName: "時空崩壊スーパーノヴァ", specialType: "all", specialQuote: "虚無と星の彼方へ消えよ…" },
+  { name: "ニコちゃん", char: "🙂", col: "#ffcc00", hp: 100, skill: "じっと見つめる", quote: "・・・・・・。", specialName: "無言の即死スマイル", specialType: "kill", specialQuote: "（虚無の微笑みで即死）" },
+  { name: "総帥", char: "🤖", col: "#00e5ff", hp: 120, skill: "レーザーガン", quote: "消滅せよ！", specialName: "最終軌道衛星オメガレーザー", specialType: "all", specialQuote: "全方位殲滅シークエンス起動！" },
+  { name: "カツオ", char: "⚾", col: "#ee7700", hp: 85, skill: "スライダー", quote: "磯野〜野球行こうぜ！", specialName: "怒りの160キロ剛速球", specialType: "kill", specialQuote: "姉さんより怖い一球を喰らえ！" },
+  { name: "波平", char: "💢", col: "#555555", hp: 100, skill: "げんこつ", quote: "ばっかもーん！", specialName: "雷鳴轟く超ばっかもーーん！", specialType: "all", specialQuote: "ばっかもーーーーーーーーん！！" },
+  { name: "タラちゃん", char: "🍼", col: "#ff99cc", hp: 80, skill: "ハイハイアタック", quote: "ですしいー！", specialName: "三輪車暴走デスロード", specialType: "kill", specialQuote: "ひき殺すですしいー！" },
+  { name: "初音ミク", char: "🎵", col: "#33cccc", hp: 95, skill: "ネギチョップ", quote: "みくみくにしてあげる♪", specialName: "みくみくビーム超乱射", specialType: "all", specialQuote: "世界をみくみくにしてやんよ！" },
+  { name: "孫悟空", char: "🥋", col: "#ff6600", hp: 120, skill: "かめはめ波", quote: "オラわくわくすっぞ！", specialName: "特大元気玉", specialType: "kill", specialQuote: "地球のみんな！オラに元気を分けてくれ！" },
+  { name: "ベジータ", char: "👑", col: "#0033cc", hp: 110, skill: "連続弾", quote: "消えろ！", specialName: "ファイナルフラッシュ", specialType: "kill", specialQuote: "笑えよベジータ…喰らえええっ！" },
+  { name: "ピカチュウ", char: "⚡", col: "#ffee00", hp: 90, skill: "10まんボルト", quote: "ピッカチュウ！", specialName: "ボルテッカー超放電", specialType: "all", specialQuote: "ピッカァァァァチュウウウウ！" },
+  { name: "カービィ", char: "⭐", col: "#ff99aa", hp: 110, skill: "すいこみ", quote: "ぽよ☆", specialName: "最終兵器クラッシュ", specialType: "all", specialQuote: "ぽよよよよーーーん！（全画面崩壊）" },
+  { name: "シャチハタ", char: "🔴", col: "#cc0000", hp: 90, skill: "スタンプ", quote: "ポン！", specialName: "一撃決裁・問答無用却下印", specialType: "kill", specialQuote: "書類不備により即時却下ァ！" },
+  { name: "猫キャット", char: "🐈", col: "#ff8800", hp: 90, skill: "ひっかき", quote: "Scratchへようこそ！", specialName: "Scratchネコ乱舞ストーム", specialType: "all", specialQuote: "100万ブロックの怒りを受けよ！" },
+  { name: "HIKAKIN", char: "😎", col: "#3399ff", hp: 110, skill: "ボイパパンチ", quote: "ブンブンハロー！", specialName: "1000万登録超爆発ボム", specialType: "all", specialQuote: "バーーーーーーーイ！！" }
 ];
 
 /* ==========================================================================
@@ -525,6 +590,9 @@ class ScratchChaosBattle {
           maxHp: item.hp || 100,
           skill: item.skill || "こうげき",
           quote: item.quote || "くらえっ！",
+          specialName: item.specialName || "超必殺メガトン砲",
+          specialType: item.specialType || "kill",
+          specialQuote: item.specialQuote || item.quote || "これで終わりだ！",
           isAlive: true
         });
       } else {
@@ -584,7 +652,7 @@ class ScratchChaosBattle {
         }
       });
       document.getElementById("winner-banner").style.display = "none";
-      this.clearArrow();
+      this.clearArrows();
       this.renderGrid();
       document.getElementById("subtitle-bar").textContent = "全員復活！！カオスバトル再戦スタート！！";
       this.start();
@@ -597,7 +665,6 @@ class ScratchChaosBattle {
       this.speedIndex = (this.speedIndex + 1) % this.speeds.length;
       btnSpeed.textContent = `⚡ 速度: ${this.speedLabels[this.speedIndex]}`;
       if (this.isRunning) {
-        this.pause();
         this.start();
       }
     };
@@ -635,11 +702,19 @@ class ScratchChaosBattle {
     document.getElementById("btn-save-modal").onclick = () => {
       this.saveCustomCharacter();
     };
+
+    // Space key to toggle play/pause
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space" && e.target.tagName !== "INPUT") {
+        e.preventDefault();
+        btnToggle.click();
+      }
+    });
   }
 
   getInterval() {
     const s = this.speeds[this.speedIndex];
-    return Math.max(30, Math.floor(900 / s));
+    return Math.max(25, Math.floor(520 / s));
   }
 
   start() {
@@ -660,7 +735,7 @@ class ScratchChaosBattle {
     this.timer = null;
   }
 
-  step() {
+  step(forcedActorIdx = null, forceSpecial = false) {
     const aliveIndices = this.fighters
       .map((f, i) => (f && f.isAlive ? i : -1))
       .filter(i => i >= 0);
@@ -671,108 +746,190 @@ class ScratchChaosBattle {
       return;
     }
 
-    const actorIdx = aliveIndices[Math.floor(Math.random() * aliveIndices.length)];
-    const targetCandidates = aliveIndices.filter(i => i !== actorIdx);
-    if (targetCandidates.length === 0) return;
-    const targetIdx = targetCandidates[Math.floor(Math.random() * targetCandidates.length)];
+    const actorIdx = (forcedActorIdx !== null && this.fighters[forcedActorIdx] && this.fighters[forcedActorIdx].isAlive)
+      ? forcedActorIdx
+      : aliveIndices[Math.floor(Math.random() * aliveIndices.length)];
 
     const actor = this.fighters[actorIdx];
-    const target = this.fighters[targetIdx];
-
-    const dmg = Math.floor(25 + Math.random() * 35);
-    target.hp = Math.max(0, target.hp - dmg);
-    const isDead = target.hp === 0;
-    if (isDead) target.isAlive = false;
-
-    document.getElementById("subtitle-bar").textContent = `${actor.name}「${actor.quote}」 → ${actor.skill}！！`;
-
-    this.drawArrow(actorIdx, targetIdx);
+    const targetCandidates = aliveIndices.filter(i => i !== actorIdx);
+    if (targetCandidates.length === 0) return;
 
     const spd = this.speeds[this.speedIndex];
-    if (isDead) {
-      audio.playExplosion();
-      setTimeout(() => audio.playBell(), 150 / spd);
+
+    // Determine special move:
+    // Base 28% chance, or 55% if HP <= 45 (pinch reversal excitement!)
+    const isPinch = actor.hp <= 45;
+    const specialChance = isPinch ? 0.55 : 0.28;
+    const isSpecial = forceSpecial || (actor.specialName && Math.random() < specialChance);
+
+    let targets = [];
+    let dmg = 0;
+
+    if (isSpecial) {
+      audio.playSpecialCharge();
+
+      if (actor.specialType === "all") {
+        // Multi-target attack (hits 2 to 4 enemies at once)
+        const hitCount = Math.min(targetCandidates.length, Math.floor(2 + Math.random() * 3));
+        const shuffled = [...targetCandidates].sort(() => Math.random() - 0.5);
+        targets = shuffled.slice(0, hitCount);
+        dmg = Math.floor(50 + Math.random() * 35);
+      } else if (actor.specialType === "bomb") {
+        // Kamikaze attack
+        const t = targetCandidates[Math.floor(Math.random() * targetCandidates.length)];
+        targets = [t];
+        dmg = 130;
+      } else {
+        // Instant Kill / Massive Strike
+        const t = targetCandidates[Math.floor(Math.random() * targetCandidates.length)];
+        targets = [t];
+        dmg = Math.floor(110 + Math.random() * 70);
+      }
+
+      document.getElementById("subtitle-bar").innerHTML = 
+        `<span style="color:#ff2222; font-weight:900; background:#fff; padding:1px 6px; border-radius:3px; margin-right:6px; box-shadow:1px 1px 0 #000;">💥【必殺技】</span>` +
+        `${actor.name}「${actor.specialQuote || actor.quote}」 → <span style="color:#ff3355;">${actor.specialName}</span>！！`;
     } else {
-      audio.playPunch();
+      // Normal attack
+      const t = targetCandidates[Math.floor(Math.random() * targetCandidates.length)];
+      targets = [t];
+      dmg = Math.floor(40 + Math.random() * 28);
+      document.getElementById("subtitle-bar").textContent = 
+        `${actor.name}「${actor.quote}」 → ${actor.skill}！！`;
     }
 
-    this.spawnBoom(targetIdx, dmg);
+    // Draw arrows from actor to targets (100% mathematically aligned to SVG overlay)
+    this.drawArrows(actorIdx, targets, isSpecial);
 
-    const hpEl = document.getElementById(`hp-val-${targetIdx}`);
-    if (hpEl) hpEl.textContent = `HP: ${target.hp}`;
+    // Apply damage to all targets
+    let anyKilled = false;
+    targets.forEach(tIdx => {
+      const target = this.fighters[tIdx];
+      target.hp = Math.max(0, target.hp - dmg);
+      const isDead = target.hp === 0;
+      if (isDead) {
+        target.isAlive = false;
+        anyKilled = true;
+      }
 
-    if (isDead) {
-      const cellTarget = document.getElementById(`cell-${targetIdx}`);
-      if (cellTarget) cellTarget.classList.add("dead");
+      this.spawnBoom(tIdx, dmg, isSpecial);
+
+      const hpEl = document.getElementById(`hp-val-${tIdx}`);
+      if (hpEl) hpEl.textContent = `HP: ${target.hp}`;
+
+      if (isDead) {
+        const cellTarget = document.getElementById(`cell-${tIdx}`);
+        if (cellTarget) cellTarget.classList.add("dead");
+      }
+    });
+
+    // If bomb type, attacker also suffers self-destruct damage
+    if (isSpecial && actor.specialType === "bomb") {
+      actor.hp = 0;
+      actor.isAlive = false;
+      anyKilled = true;
+      const cellActor = document.getElementById(`cell-${actorIdx}`);
+      if (cellActor) cellActor.classList.add("dead");
+      const hpEl = document.getElementById(`hp-val-${actorIdx}`);
+      if (hpEl) hpEl.textContent = "HP: 0";
+      this.spawnBoom(actorIdx, 999, true);
     }
 
-    const holdMs = Math.max(20, Math.floor(400 / spd));
+    // Sound effects
+    if (isSpecial) {
+      setTimeout(() => audio.playMegaBlast(), 50 / spd);
+      if (anyKilled) setTimeout(() => audio.playBell(), 160 / spd);
+    } else {
+      if (anyKilled) {
+        audio.playExplosion();
+        setTimeout(() => audio.playBell(), 120 / spd);
+      } else {
+        audio.playPunch();
+      }
+    }
+
+    const holdMs = Math.max(15, Math.floor(220 / spd));
     setTimeout(() => {
-      this.clearArrow();
+      this.clearArrows();
       if (this.fighters.filter(f => f && f.isAlive).length <= 1) {
         this.step();
       }
     }, holdMs);
   }
 
-  drawArrow(actorIdx, targetIdx) {
+  drawArrows(actorIdx, targetIndices, isSpecial = false) {
+    this.clearArrows();
     const cellA = document.getElementById(`cell-${actorIdx}`);
-    const cellT = document.getElementById(`cell-${targetIdx}`);
-    if (!cellA || !cellT) return;
+    if (!cellA) return;
 
-    cellA.classList.add("highlight-attacker");
-    cellT.classList.add("highlight-target");
+    cellA.classList.add(isSpecial ? "highlight-special" : "highlight-attacker");
 
-    const arena = document.getElementById("grid-arena");
-    const rectArena = arena.getBoundingClientRect();
+    const svg = document.getElementById("arrow-overlay");
+    const rectSvg = svg.getBoundingClientRect();
     const rectA = cellA.getBoundingClientRect();
-    const rectT = cellT.getBoundingClientRect();
+    const x1 = rectA.left + rectA.width / 2 - rectSvg.left;
+    const y1 = rectA.top + rectA.height / 2 - rectSvg.top;
 
-    const x1 = rectA.left + rectA.width / 2 - rectArena.left;
-    const y1 = rectA.top + rectA.height / 2 - rectArena.top;
-    const x2 = rectT.left + rectT.width / 2 - rectArena.left;
-    const y2 = rectT.top + rectT.height / 2 - rectArena.top;
+    targetIndices.forEach(tIdx => {
+      const cellT = document.getElementById(`cell-${tIdx}`);
+      if (!cellT) return;
+      cellT.classList.add("highlight-target");
+      const rectT = cellT.getBoundingClientRect();
+      const x2 = rectT.left + rectT.width / 2 - rectSvg.left;
+      const y2 = rectT.top + rectT.height / 2 - rectSvg.top;
 
-    const line = document.getElementById("red-arrow");
-    line.setAttribute("x1", x1);
-    line.setAttribute("y1", y1);
-    line.setAttribute("x2", x2);
-    line.setAttribute("y2", y2);
-    line.style.display = "block";
-  }
-
-  clearArrow() {
-    const line = document.getElementById("red-arrow");
-    if (line) line.style.display = "none";
-    document.querySelectorAll(".grid-cell").forEach(c => {
-      c.classList.remove("highlight-attacker", "highlight-target");
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", x1);
+      line.setAttribute("y1", y1);
+      line.setAttribute("x2", x2);
+      line.setAttribute("y2", y2);
+      line.setAttribute("stroke", isSpecial ? "#ff0022" : "#ff0000");
+      line.setAttribute("stroke-width", isSpecial ? "22" : "18");
+      line.setAttribute("stroke-linecap", "butt");
+      line.setAttribute("marker-end", isSpecial ? "url(#arrowhead-special)" : "url(#arrowhead)");
+      line.classList.add("active-arrow");
+      svg.appendChild(line);
     });
   }
 
-  spawnBoom(targetIdx, dmg) {
+  clearArrows() {
+    const svg = document.getElementById("arrow-overlay");
+    if (svg) {
+      svg.querySelectorAll(".active-arrow").forEach(l => l.remove());
+    }
+    document.querySelectorAll(".grid-cell").forEach(c => {
+      c.classList.remove("highlight-attacker", "highlight-target", "highlight-special");
+    });
+  }
+
+  spawnBoom(targetIdx, dmg, isSpecial = false) {
     const cell = document.getElementById(`cell-${targetIdx}`);
     if (!cell) return;
-    const arena = document.getElementById("grid-arena");
-    const rectArena = arena.getBoundingClientRect();
+    const overlay = document.getElementById("effect-overlay");
+    const rectOverlay = overlay.getBoundingClientRect();
     const rect = cell.getBoundingClientRect();
 
-    const cx = rect.left + rect.width / 2 - rectArena.left;
-    const cy = rect.top + rect.height / 2 - rectArena.top;
-
-    const overlay = document.getElementById("effect-overlay");
+    const cx = rect.left + rect.width / 2 - rectOverlay.left;
+    const cy = rect.top + rect.height / 2 - rectOverlay.top;
 
     const boom = document.createElement("div");
     boom.className = "scratch-boom";
-    boom.textContent = "💥";
+    boom.textContent = isSpecial ? "💥💥" : "💥";
     boom.style.left = `${cx}px`;
     boom.style.top = `${cy}px`;
+    if (isSpecial) boom.style.fontSize = "3.4rem";
     overlay.appendChild(boom);
 
     const num = document.createElement("div");
     num.className = "scratch-dmg-text";
     num.textContent = `-${dmg}`;
     num.style.left = `${cx}px`;
-    num.style.top = `${cy - 10}px`;
+    num.style.top = `${cy - 12}px`;
+    if (isSpecial) {
+      num.style.fontSize = "2.3rem";
+      num.style.color = "#ffff00";
+      num.style.textShadow = "2px 2px 0 #ff0000, -1px -1px 0 #000";
+    }
     overlay.appendChild(num);
 
     setTimeout(() => {
@@ -787,7 +944,7 @@ class ScratchChaosBattle {
     const banner = document.getElementById("winner-banner");
     if (winner) {
       document.getElementById("winner-title").textContent = `勝者：${winner.name}！！`;
-      document.getElementById("winner-quote").textContent = `「${winner.quote}」`;
+      document.getElementById("winner-quote").textContent = `「${winner.specialQuote || winner.quote}」`;
     } else {
       document.getElementById("winner-title").textContent = "引き分け！！";
       document.getElementById("winner-quote").textContent = "全員相討ちにより勝者なし！";
@@ -800,6 +957,11 @@ class ScratchChaosBattle {
     this.tempUploadData = null;
     document.getElementById("custom-name").value = "";
     document.getElementById("custom-hp").value = "100";
+    document.getElementById("custom-skill").value = "パンチ";
+    document.getElementById("custom-quote").value = "いくぞ！";
+    document.getElementById("custom-special").value = "超メガ粒子砲";
+    document.getElementById("custom-special-quote").value = "喰らえええええ！";
+    document.getElementById("custom-special-type").value = "kill";
     document.getElementById("file-selector").value = "";
     document.getElementById("upload-modal").style.display = "flex";
   }
@@ -807,8 +969,11 @@ class ScratchChaosBattle {
   saveCustomCharacter() {
     const name = document.getElementById("custom-name").value.trim() || "オリジナル戦士";
     const hp = parseInt(document.getElementById("custom-hp").value, 10) || 100;
-    const skill = document.getElementById("custom-skill").value.trim() || "必殺技";
-    const quote = document.getElementById("custom-quote").value.trim() || "喰らいなさい！";
+    const skill = document.getElementById("custom-skill").value.trim() || "パンチ";
+    const quote = document.getElementById("custom-quote").value.trim() || "いくぞ！";
+    const specialName = document.getElementById("custom-special").value.trim() || "超メガ粒子砲";
+    const specialQuote = document.getElementById("custom-special-quote").value.trim() || "喰らえええええ！";
+    const specialType = document.getElementById("custom-special-type").value || "kill";
 
     const img = this.tempUploadData || makeIconSvg(name, "#ff00bb", "★");
 
@@ -817,7 +982,10 @@ class ScratchChaosBattle {
       img,
       hp,
       skill,
-      quote
+      quote,
+      specialName,
+      specialQuote,
+      specialType
     };
 
     try {
@@ -841,20 +1009,13 @@ class ScratchChaosBattle {
       f.isAlive = true;
       f.hp = f.maxHp;
       this.renderGrid();
-      document.getElementById("subtitle-bar").textContent = `${f.name} が奇跡の復活！！`;
+      audio.playBell();
+      document.getElementById("subtitle-bar").textContent = `✨ ${f.name} が奇跡の復活！！`;
     } else {
       audio.init();
-      this.fighters.forEach((other, otherIdx) => {
-        if (other && other.isAlive && otherIdx !== idx) {
-          other.hp = Math.max(0, other.hp - 40);
-          if (other.hp === 0) other.isAlive = false;
-        }
-      });
-      audio.playExplosion();
-      this.drawArrow(idx, (idx + 1) % this.totalSlots);
-      setTimeout(() => this.clearArrow(), 250);
-      this.renderGrid();
-      document.getElementById("subtitle-bar").textContent = `${f.name}「${f.quote}」 全員に大打撃！！`;
+      // Manual click forces this fighter's special move immediately!
+      this.pause();
+      this.step(idx, true);
     }
   }
 }
