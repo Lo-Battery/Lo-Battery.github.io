@@ -8,7 +8,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
       width: 100%; height: 100%;
-      background: #222;
+      background: #111;
       font-family: "Impact", "Arial Black", "Meiryo", sans-serif;
       overflow: hidden;
       display: flex;
@@ -18,14 +18,12 @@
       user-select: none;
     }
 
-    /* 4:3 〜 16:9 Canvas Container (Scratch Screen) */
+    /* Stage Container (Fills Fullscreen cleanly on both PC & Mobile) */
     #stage-container {
       position: relative;
-      width: min(96vw, 128vh);
-      height: min(72vw, 96vh);
+      width: 100vw;
+      height: 100vh;
       background: #ffffff;
-      border: 4px solid #000;
-      box-shadow: 0 0 20px rgba(0,0,0,0.8);
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -33,15 +31,15 @@
 
     /* Top Control Bar */
     #toolbar {
-      background: #f0f0f0;
-      border-bottom: 3px solid #000;
-      padding: 6px 10px;
+      background: #e8e8e8;
+      border-bottom: 2px solid #000;
+      padding: 4px 8px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 6px;
-      flex-wrap: wrap;
       z-index: 50;
+      flex-shrink: 0;
     }
 
     .tool-group {
@@ -54,9 +52,9 @@
       background: #fff;
       border: 2px solid #000;
       font-family: inherit;
-      font-size: 0.82rem;
-      font-weight: bold;
-      padding: 5px 10px;
+      font-size: 0.8rem;
+      font-weight: 900;
+      padding: 4px 10px;
       border-radius: 4px;
       cursor: pointer;
       box-shadow: 2px 2px 0 #000;
@@ -74,31 +72,32 @@
       color: #000;
     }
     button.btn-red {
-      background: #ff4444;
+      background: #ff3333;
       color: #fff;
     }
 
-    /* Top Subtitle / Quote Display (Scratch Style Banner) */
+    /* Subtitle Banner */
     #subtitle-bar {
-      height: 38px;
+      height: 34px;
       background: #000;
       color: #ffff00;
-      border-bottom: 3px solid #000;
+      border-bottom: 2px solid #000;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 0 10px;
-      font-size: 1.15rem;
+      font-size: 1.05rem;
       font-weight: 900;
       text-shadow: 1px 1px 0 #ff0000;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       z-index: 40;
+      flex-shrink: 0;
     }
 
     /* ======================================================================
-       GRID ARENA (Exact Scratch Chaos Battle Layout)
+       6x6 GRID ARENA (Exact Scratch Chaos Battle Layout)
        ====================================================================== */
     #grid-arena {
       flex: 1;
@@ -106,64 +105,63 @@
       height: 100%;
       display: grid;
       grid-template-columns: repeat(6, 1fr);
-      grid-template-rows: repeat(5, 1fr);
+      grid-template-rows: repeat(6, 1fr);
       background: #fff;
       position: relative;
     }
 
-    /* Grid Cells */
     .grid-cell {
-      border-right: 2px solid #000;
-      border-bottom: 2px solid #000;
+      border-right: 1.5px solid #000;
+      border-bottom: 1.5px solid #000;
       position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 2px;
+      padding: 1px;
       cursor: pointer;
       background: #fff;
       overflow: hidden;
     }
     .grid-cell.highlight-attacker {
-      background: #ffff66 !important;
-      animation: cellBlink 0.15s infinite alternate;
+      background: #ffff44 !important;
+      animation: cellBlink 0.12s infinite alternate;
     }
     .grid-cell.highlight-target {
-      background: #ff9999 !important;
+      background: #ff8888 !important;
     }
     @keyframes cellBlink {
       from { filter: brightness(1); }
-      to { filter: brightness(1.3); }
+      to { filter: brightness(1.35); }
     }
 
     .cell-img {
-      max-width: 82%;
-      max-height: 68%;
+      max-width: 85%;
+      max-height: 72%;
       object-fit: contain;
       pointer-events: none;
     }
 
     .cell-name {
-      font-size: 0.68rem;
-      font-weight: bold;
+      font-size: 0.65rem;
+      font-weight: 900;
       color: #000;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: 95%;
-      line-height: 1;
+      line-height: 1.1;
       margin-top: 1px;
     }
 
     .cell-hp {
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       font-weight: 900;
       color: #cc0000;
       line-height: 1;
     }
 
-    /* Big Red "X" Stamp for Defeated Fighters */
+    /* Red "X" Stamp */
     .cell-dead-x {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -171,28 +169,27 @@
       display: none;
       align-items: center;
       justify-content: center;
-      font-size: 3.5rem;
+      font-size: 3.8rem;
       font-weight: 900;
-      color: rgba(230, 0, 0, 0.9);
+      color: rgba(230, 0, 0, 0.92);
       text-shadow: 2px 2px 0 #000;
       z-index: 10;
     }
     .grid-cell.dead {
-      background: #ddd !important;
+      background: #e2e2e2 !important;
     }
     .grid-cell.dead .cell-img {
-      filter: grayscale(100%) opacity(0.4);
+      filter: grayscale(100%) opacity(0.35);
     }
     .grid-cell.dead .cell-dead-x {
       display: flex;
     }
 
-    /* Add Character Plus Slot */
     .cell-empty {
       background: #fafafa;
-      color: #888;
-      font-size: 1.8rem;
-      border: 2px dashed #bbb;
+      color: #aaa;
+      font-size: 1.6rem;
+      border: 1.5px dashed #ccc;
     }
     .cell-empty:hover {
       background: #eef;
@@ -200,7 +197,7 @@
       color: #00f;
     }
 
-    /* SVG Overlay for Big Red Arrow */
+    /* BIG RED ARROW (Scratch Style) */
     #arrow-overlay {
       position: absolute;
       top: 0; left: 0;
@@ -209,7 +206,6 @@
       z-index: 30;
     }
 
-    /* Explosion / Damage Text Overlay */
     #effect-overlay {
       position: absolute;
       top: 0; left: 0;
@@ -234,7 +230,7 @@
     .scratch-dmg-text {
       position: absolute;
       transform: translate(-50%, -50%);
-      font-size: 2rem;
+      font-size: 1.8rem;
       font-weight: 900;
       color: #ff0000;
       text-shadow: 2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 0 3px 0 #000;
@@ -247,19 +243,19 @@
       100% { transform: translate(-50%, -50%) scale(1) translateY(-30px); opacity: 0; }
     }
 
-    /* Big Winner Banner */
+    /* Winner Banner */
     #winner-banner {
       position: absolute;
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(255, 230, 0, 0.95);
+      background: rgba(255, 235, 0, 0.98);
       border: 5px solid #ff0000;
-      padding: 20px 40px;
-      font-size: 2.2rem;
+      padding: 18px 36px;
+      font-size: 2.1rem;
       font-weight: 900;
       color: #ff0000;
-      text-shadow: 2px 2px 0 #fff, 0 0 15px #ffaa00;
-      box-shadow: 0 0 30px rgba(0,0,0,0.8);
+      text-shadow: 2px 2px 0 #fff;
+      box-shadow: 0 0 30px rgba(0,0,0,0.85);
       z-index: 60;
       display: none;
       flex-direction: column;
@@ -268,11 +264,11 @@
       text-align: center;
     }
 
-    /* Modal for Upload & Add */
+    /* Upload Modal */
     #upload-modal {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.75);
       display: none;
       align-items: center;
       justify-content: center;
@@ -307,43 +303,41 @@
   <!-- Top Toolbar -->
   <div id="toolbar">
     <div class="tool-group">
-      <button class="btn-green" id="btn-toggle">▶ スタート</button>
+      <button class="btn-green" id="btn-toggle">⏸ 一時停止</button>
       <button id="btn-step">⏭ 1手進む</button>
       <button id="btn-restart">🔄 最初から再戦</button>
       <button id="btn-speed">⚡ 速度: 1x</button>
     </div>
     <div class="tool-group">
       <button class="btn-red" id="btn-add-char">＋ 画像をアップロードして追加</button>
-      <button id="btn-reset-chars">初期キャラに戻す</button>
+      <button id="btn-reset-chars">初期配置に戻す</button>
     </div>
   </div>
 
-  <!-- Subtitle Bar (Who attacks with what quote) -->
+  <!-- Subtitle Bar -->
   <div id="subtitle-bar">カオスバトル開幕！！クリックして画像キャラも追加できるぞ！</div>
 
-  <!-- 6x5 Scratch Grid -->
-  <div id="grid-arena">
-    <!-- Cells dynamically generated -->
-  </div>
+  <!-- 6x6 Grid Arena -->
+  <div id="grid-arena"></div>
 
-  <!-- Big Red Arrow SVG Overlay -->
+  <!-- SVG for Big Fat Red Arrow (Exact scratch style!) -->
   <svg id="arrow-overlay">
     <defs>
-      <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-        <polygon points="0 0, 8 3, 0 6" fill="#ff0000" stroke="#880000" stroke-width="0.5" />
+      <marker id="arrowhead" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto">
+        <polygon points="0 0, 7 3, 0 6" fill="#ff0000" stroke="#b30000" stroke-width="0.3" />
       </marker>
     </defs>
-    <line id="red-arrow" x1="0" y1="0" x2="0" y2="0" stroke="#ff0000" stroke-width="12" stroke-linecap="round" marker-end="url(#arrowhead)" style="display:none;" />
+    <line id="red-arrow" x1="0" y1="0" x2="0" y2="0" stroke="#ff0000" stroke-width="20" stroke-linecap="butt" marker-end="url(#arrowhead)" style="display:none;" />
   </svg>
 
-  <!-- Explosions & Damage texts -->
+  <!-- Effects Overlay -->
   <div id="effect-overlay"></div>
 
-  <!-- Big Winner Banner -->
+  <!-- Winner Banner -->
   <div id="winner-banner">
     <div id="winner-title">勝者：ドナルド！！</div>
     <div style="font-size:1.1rem; color:#000;" id="winner-quote">「ランランルー！自然と体が動いちゃうんだ☆」</div>
-    <button class="btn-green" id="btn-winner-restart" style="margin-top:10px; font-size:1.1rem; padding:8px 20px;">🔄 もう一度戦う！</button>
+    <button class="btn-green" id="btn-winner-restart" style="margin-top:10px; font-size:1.1rem; padding:8px 24px;">🔄 もう一度戦う！</button>
   </div>
 
   <!-- Modal for Uploading Custom Image -->
@@ -363,12 +357,9 @@
   </div>
 </div>
 
-<!-- Hidden File Input for Direct Trigger -->
-<input type="file" id="direct-file-input" accept="image/*" style="display:none;" />
-
 <script>
 /* ==========================================================================
-   SIMPLE WEB AUDIO (Scratch Style Sound FX)
+   SIMPLE WEB AUDIO
    ========================================================================== */
 class ScratchAudio {
   constructor() {
@@ -416,7 +407,6 @@ class ScratchAudio {
     src.start(t);
   }
   playBell() {
-    // "チーン♪"
     this.init();
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
@@ -449,14 +439,14 @@ class ScratchAudio {
 const audio = new ScratchAudio();
 
 /* ==========================================================================
-   DEFAULT ICONS (SVG Pixel Art / Memes)
+   DEFAULT CHARACTERS (SVG Memes matching scratch culture)
    ========================================================================== */
 function makeIconSvg(text, bgCol, char) {
   return "data:image/svg+xml;utf8," + encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
       <rect width="100" height="100" fill="${bgCol}"/>
-      <text x="50" y="60" font-size="52" text-anchor="middle" dominant-baseline="central">${char}</text>
-      <text x="50" y="90" font-size="14" font-weight="900" fill="#fff" text-anchor="middle" stroke="#000" stroke-width="0.8">${text}</text>
+      <text x="50" y="55" font-size="50" text-anchor="middle" dominant-baseline="central">${char}</text>
+      <text x="50" y="88" font-size="13" font-weight="900" fill="#fff" text-anchor="middle" stroke="#000" stroke-width="0.8">${text}</text>
     </svg>
   `);
 }
@@ -468,28 +458,38 @@ const DEFAULT_ROSTER = [
   { name: "ドラえもん", char: "🔔", col: "#0099ff", hp: 100, skill: "地球破壊爆弾", quote: "ぼくドラえもんです！" },
   { name: "アンパンマン", char: "🍞", col: "#ff6600", hp: 100, skill: "アンパンチ", quote: "顔が濡れて力が出ない〜" },
   { name: "デデデ大王", char: "🔨", col: "#ffaa00", hp: 120, skill: "メガハンマー", quote: "わしの勝ちぞい！" },
-  { name: "修造", char: "🔥", col: "#ff4400", hp: 100, skill: "熱くなれよ！！", quote: "諦めんなよぉぉ！！" },
+  { name: "松岡修造", char: "🔥", col: "#ff4400", hp: 100, skill: "熱くなれよ！！", quote: "諦めんなよぉぉ！！" },
   { name: "ひろゆき", char: "🗣️", col: "#cccc00", hp: 90, skill: "それって感想ですよね", quote: "なんかデータあるんですか？" },
   { name: "マリオ", char: "🍄", col: "#dd0000", hp: 100, skill: "ファイアボール", quote: "マンマミーア！" },
   { name: "ルイージ", char: "⚡", col: "#00bb00", hp: 95, skill: "オバキューム", quote: "ルイージマンションへようこそ" },
   { name: "クリーパー", char: "💣", col: "#33aa33", hp: 80, skill: "大爆発自爆", quote: "シューーーッ（爆発）" },
   { name: "マスオさん", char: "👓", col: "#6699ff", hp: 90, skill: "ええぇぇぇー！", quote: "ええぇぇぇー！！" },
-  { name: "アリス", char: "✨", col: "#ff66cc", hp: 95, skill: "スターライト砲", quote: "少し頭冷やそうか！" },
+  { name: "魔理沙", char: "🧙‍♀️", col: "#ffdd00", hp: 95, skill: "マスタースパーク", quote: "弾幕はパワーだぜ！" },
+  { name: "霊夢", char: "⛩️", col: "#ff3333", hp: 100, skill: "夢想封印", quote: "お賽銭ちょうだい！" },
   { name: "宇宙猫", char: "🐱", col: "#9966ff", hp: 100, skill: "時空崩壊", quote: "ニャーーーーーン！" },
-  { name: "ニコちゃん", char: "🙂", col: "#ffdd00", hp: 100, skill: "虚無スマイル", quote: "・・・・・・。" },
+  { name: "ニコちゃん", char: "🙂", col: "#ffcc00", hp: 100, skill: "虚無スマイル", quote: "・・・・・・。" },
   { name: "総帥", char: "🤖", col: "#00e5ff", hp: 120, skill: "オメガレーザー", quote: "消滅せよ！" },
   { name: "カツオ", char: "⚾", col: "#ee7700", hp: 85, skill: "姉さん怒りの鉄拳", quote: "磯野〜野球行こうぜ！" },
-  { name: "波平", char: "💢", col: "#555555", hp: 100, skill: "ばっかもーん！", quote: "ばっかもーーーーん！！" }
+  { name: "波平", char: "💢", col: "#555555", hp: 100, skill: "ばっかもーん！", quote: "ばっかもーーーーん！！" },
+  { name: "タラちゃん", char: "🍼", col: "#ff99cc", hp: 80, skill: "デスステップ", quote: "ですしいー！" },
+  { name: "初音ミク", char: "🎵", col: "#33cccc", hp: 95, skill: "みくみくビーム", quote: "みくみくにしてあげる♪" },
+  { name: "孫悟空", char: "🥋", col: "#ff6600", hp: 120, skill: "かめはめ波", quote: "オラわくわくすっぞ！" },
+  { name: "ベジータ", char: "👑", col: "#0033cc", hp: 110, skill: "ファイナルフラッシュ", quote: "ビッグバンアタック！" },
+  { name: "ピカチュウ", char: "⚡", col: "#ffee00", hp: 90, skill: "10まんボルト", quote: "ピッカチュウウウ！" },
+  { name: "カービィ", char: "⭐", col: "#ff99aa", hp: 110, skill: "すいこみ", quote: "ぽよ☆" },
+  { name: "シャチハタ", char: "🔴", col: "#cc0000", hp: 90, skill: "即時承認印鑑", quote: "ポン！（承認）" },
+  { name: "猫キャット", char: "🐈", col: "#ff8800", hp: 90, skill: "ネコパンチ", quote: "Scratchへようこそ！" },
+  { name: "HIKAKIN", char: "😎", col: "#3399ff", hp: 110, skill: "ブンブンハロー", quote: "ブンブンハローYouTube！" }
 ];
 
 /* ==========================================================================
-   CHAOS BATTLE SYSTEM
+   CHAOS BATTLE ENGINE
    ========================================================================== */
 class ScratchChaosBattle {
   constructor() {
-    this.totalSlots = 30; // 6 cols x 5 rows
+    this.totalSlots = 36; // 6 cols x 6 rows = 36 slots
     this.fighters = [];
-    this.isRunning = false;
+    this.isRunning = true;
     this.timer = null;
     this.speedIndex = 0;
     this.speeds = [1, 2, 4, 10];
@@ -499,10 +499,12 @@ class ScratchChaosBattle {
     this.initFighters();
     this.renderGrid();
     this.bindEvents();
+
+    // Start battle immediately
+    this.start();
   }
 
   initFighters() {
-    // Load custom saved characters if any
     let custom = [];
     try {
       const s = localStorage.getItem("scratch_chaos_custom");
@@ -512,7 +514,6 @@ class ScratchChaosBattle {
     const rosterSource = [...DEFAULT_ROSTER, ...custom];
     this.fighters = [];
 
-    // Fill the grid up to totalSlots
     for (let i = 0; i < this.totalSlots; i++) {
       if (i < rosterSource.length) {
         const item = rosterSource[i];
@@ -527,7 +528,6 @@ class ScratchChaosBattle {
           isAlive: true
         });
       } else {
-        // Empty slot
         this.fighters.push(null);
       }
     }
@@ -549,7 +549,6 @@ class ScratchChaosBattle {
           <div class="cell-name">${f.name}</div>
           <div class="cell-hp" id="hp-val-${idx}">HP: ${f.hp}</div>
         `;
-        // Click to edit or manually attack
         cell.onclick = () => this.onCellClicked(idx);
       } else {
         cell.className += " cell-empty";
@@ -562,25 +561,19 @@ class ScratchChaosBattle {
   }
 
   bindEvents() {
-    // Start / Pause
     const btnToggle = document.getElementById("btn-toggle");
     btnToggle.onclick = () => {
       audio.init();
-      if (this.isRunning) {
-        this.pause();
-      } else {
-        this.start();
-      }
+      if (this.isRunning) this.pause();
+      else this.start();
     };
 
-    // Step 1 Turn
     document.getElementById("btn-step").onclick = () => {
       audio.init();
       this.pause();
       this.step();
     };
 
-    // Restart (全員復活して即座に再戦！)
     const doRestart = () => {
       audio.init();
       this.pause();
@@ -599,7 +592,6 @@ class ScratchChaosBattle {
     document.getElementById("btn-restart").onclick = doRestart;
     document.getElementById("btn-winner-restart").onclick = doRestart;
 
-    // Speed Toggle
     const btnSpeed = document.getElementById("btn-speed");
     btnSpeed.onclick = () => {
       this.speedIndex = (this.speedIndex + 1) % this.speeds.length;
@@ -610,7 +602,6 @@ class ScratchChaosBattle {
       }
     };
 
-    // Reset default characters
     document.getElementById("btn-reset-chars").onclick = () => {
       if (confirm("キャラクターを初期状態に戻しますか？")) {
         localStorage.removeItem("scratch_chaos_custom");
@@ -618,17 +609,15 @@ class ScratchChaosBattle {
         this.initFighters();
         this.renderGrid();
         document.getElementById("winner-banner").style.display = "none";
+        this.start();
       }
     };
 
-    // Add Image Button
     document.getElementById("btn-add-char").onclick = () => {
-      // Find first empty slot
       const emptyIdx = this.fighters.findIndex(f => f === null);
       this.openAddModal(emptyIdx >= 0 ? emptyIdx : this.fighters.length - 1);
     };
 
-    // File Selector in Modal
     document.getElementById("file-selector").onchange = (e) => {
       const file = e.target.files && e.target.files[0];
       if (file) {
@@ -640,7 +629,6 @@ class ScratchChaosBattle {
       }
     };
 
-    // Modal Cancel / Save
     document.getElementById("btn-cancel-modal").onclick = () => {
       document.getElementById("upload-modal").style.display = "none";
     };
@@ -673,7 +661,6 @@ class ScratchChaosBattle {
   }
 
   step() {
-    // 生存しているファイターたち
     const aliveIndices = this.fighters
       .map((f, i) => (f && f.isAlive ? i : -1))
       .filter(i => i >= 0);
@@ -684,9 +671,7 @@ class ScratchChaosBattle {
       return;
     }
 
-    // ランダムに行動者を選ぶ
     const actorIdx = aliveIndices[Math.floor(Math.random() * aliveIndices.length)];
-    // 行動者以外のターゲットを選ぶ
     const targetCandidates = aliveIndices.filter(i => i !== actorIdx);
     if (targetCandidates.length === 0) return;
     const targetIdx = targetCandidates[Math.floor(Math.random() * targetCandidates.length)];
@@ -694,19 +679,15 @@ class ScratchChaosBattle {
     const actor = this.fighters[actorIdx];
     const target = this.fighters[targetIdx];
 
-    // ダメージ計算 (20〜60)
     const dmg = Math.floor(25 + Math.random() * 35);
     target.hp = Math.max(0, target.hp - dmg);
     const isDead = target.hp === 0;
     if (isDead) target.isAlive = false;
 
-    // 字幕の更新
     document.getElementById("subtitle-bar").textContent = `${actor.name}「${actor.quote}」 → ${actor.skill}！！`;
 
-    // 演出：マス強調 ＆ 赤い太い矢印を引く！
     this.drawArrow(actorIdx, targetIdx);
 
-    // サウンドとエフェクト
     const spd = this.speeds[this.speedIndex];
     if (isDead) {
       audio.playExplosion();
@@ -715,10 +696,8 @@ class ScratchChaosBattle {
       audio.playPunch();
     }
 
-    // 爆発＆ダメージ数字を標的のマスにポップ
     this.spawnBoom(targetIdx, dmg);
 
-    // HP更新
     const hpEl = document.getElementById(`hp-val-${targetIdx}`);
     if (hpEl) hpEl.textContent = `HP: ${target.hp}`;
 
@@ -727,7 +706,6 @@ class ScratchChaosBattle {
       if (cellTarget) cellTarget.classList.add("dead");
     }
 
-    // 次のターンの前に矢印とハイライトをクリア
     const holdMs = Math.max(20, Math.floor(400 / spd));
     setTimeout(() => {
       this.clearArrow();
@@ -783,7 +761,6 @@ class ScratchChaosBattle {
 
     const overlay = document.getElementById("effect-overlay");
 
-    // Boom emoji
     const boom = document.createElement("div");
     boom.className = "scratch-boom";
     boom.textContent = "💥";
@@ -791,7 +768,6 @@ class ScratchChaosBattle {
     boom.style.top = `${cy}px`;
     overlay.appendChild(boom);
 
-    // Dmg number
     const num = document.createElement("div");
     num.className = "scratch-dmg-text";
     num.textContent = `-${dmg}`;
@@ -844,7 +820,6 @@ class ScratchChaosBattle {
       quote
     };
 
-    // Save in storage
     try {
       let custom = [];
       const s = localStorage.getItem("scratch_chaos_custom");
@@ -863,13 +838,11 @@ class ScratchChaosBattle {
     const f = this.fighters[idx];
     if (!f) return;
     if (!f.isAlive) {
-      // 復活
       f.isAlive = true;
       f.hp = f.maxHp;
       this.renderGrid();
       document.getElementById("subtitle-bar").textContent = `${f.name} が奇跡の復活！！`;
     } else {
-      // 一撃必殺マニュアル攻撃
       audio.init();
       this.fighters.forEach((other, otherIdx) => {
         if (other && other.isAlive && otherIdx !== idx) {
