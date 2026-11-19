@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>極割 -KIWAMI WARIBASHI- | アスペン元禄箸 究極の二本指割り</title>
   <meta name="theme-color" content="#141312" />
   <style>
@@ -197,7 +200,8 @@
   </div>
 
   <script type="module">
-    import init from "./pkg/waribashi_lib.js";
+    const APP_VERSION = "20261119_v3";
+    import init from "./pkg/waribashi_lib.js?v=20261119_v3";
 
     // Web Overlay グローバルブリッジ
     window.gminiOverlay = {
@@ -317,7 +321,7 @@
 
     async function start() {
       try {
-        const wasmBytes = await fetchWithProgress("./pkg/waribashi_lib_bg.wasm");
+        const wasmBytes = await fetchWithProgress(`./pkg/waribashi_lib_bg.wasm?v=${APP_VERSION}`);
         const statusEl = document.getElementById("loading-status");
         if (statusEl) statusEl.textContent = "起動中...";
 

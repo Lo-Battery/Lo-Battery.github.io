@@ -1,3 +1,5 @@
+/* @ts-self-types="./waribashi_lib.d.ts" */
+
 /**
  * Format that each sample has. Usually, this corresponds to the sampling
  * depth of the audio source. For example, 16 bit quantized samples can be
