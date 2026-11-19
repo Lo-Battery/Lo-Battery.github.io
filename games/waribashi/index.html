@@ -185,7 +185,7 @@
     </div>
 
     <div id="canvas-container">
-      <canvas id="gmini-canvas"></canvas>
+      <canvas id="gmini-canvas" tabindex="0"></canvas>
     </div>
 
     <div id="loader">
@@ -199,8 +199,8 @@
   </div>
 
   <script type="module">
-    const APP_VERSION = "20261119_v4";
-    import init from "./pkg/waribashi_lib.js?v=20261119_v4";
+    const APP_VERSION = "20261119_v8";
+    import init from "./pkg/waribashi_lib.js?v=20261119_v8";
 
     // Web Overlay グローバルブリッジ
     window.gminiOverlay = {
@@ -228,13 +228,20 @@
     function attachButton(id, handler) {
       const el = document.getElementById(id);
       if (!el) return;
-      const wrapped = (e) => {
+      el.addEventListener("pointerdown", (e) => {
+        e.stopPropagation();
+      });
+      el.addEventListener("touchstart", (e) => {
+        e.stopPropagation();
+      }, { passive: true });
+      el.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
+        el.blur();
+        const canvas = document.getElementById("gmini-canvas");
+        if (canvas) canvas.focus();
         handler();
-      };
-      el.addEventListener("click", wrapped);
-      el.addEventListener("touchstart", wrapped, { passive: false });
+      });
     }
 
     attachButton("btn-restart", () => {
